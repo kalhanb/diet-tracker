@@ -62,8 +62,9 @@ export async function POST(request: Request) {
     const text = response.text();
 
     return NextResponse.json({ plan: text });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Gemini AI Error:', error);
-    return NextResponse.json({ error: 'Failed to generate AI plan' }, { status: 500 });
+    const errorMessage = error?.message || 'Failed to generate AI plan';
+    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}` }, { status: 500 });
   }
 }
