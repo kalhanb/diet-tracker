@@ -580,6 +580,45 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
           </section>
       )}
 
+      {activeTab === 'admin' && (
+          <section className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                  <ShieldCheck size={32} color="var(--primary)" />
+                  <h2>AI Orchestrator Settings 🛡️</h2>
+              </div>
+              
+              <div className="grid" style={{ gap: '2rem' }}>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>AI Engine Provider</label>
+                      <select 
+                        value={activeConfig.activeProvider} 
+                        onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)}
+                        style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
+                      >
+                          <option value="gemini">Google Gemini (Default)</option>
+                          <option value="openai">OpenAI (ChatGPT-4o)</option>
+                          <option value="anthropic">Anthropic (Claude 3.5)</option>
+                      </select>
+                  </div>
+
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Specific Model ID</label>
+                      <input 
+                        type="text" 
+                        value={activeConfig.activeModel} 
+                        onChange={(e) => setActiveConfig({...activeConfig, activeModel: e.target.value})}
+                        onBlur={(e) => updateGlobalConfig(activeConfig.activeProvider, (e.target as HTMLInputElement).value)}
+                        placeholder="e.g. gemini-3.0-flash, gpt-4o, claude-3-5-sonnet-20240620"
+                        style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
+                      />
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'rgba(56, 189, 248, 0.1)', padding: '0.75rem', borderRadius: '0.5rem', borderLeft: '3px solid var(--primary)' }}>
+                          <strong>Admin Tip:</strong> Ensure your <code>.env</code> file contains the correct API keys for the selected provider.
+                      </p>
+                  </div>
+              </div>
+          </section>
+      )}
+
       {/* Forms */}
       {showLogForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
