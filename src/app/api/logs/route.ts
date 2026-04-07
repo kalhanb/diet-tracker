@@ -45,3 +45,36 @@ export async function POST(request: Request) {
 
   return NextResponse.json(log);
 }
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) return NextResponse.json({ error: 'Log ID is required' }, { status: 400 });
+
+  await prisma.dietLog.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
+}
+
+export async function PATCH(request: Request) {
+  const body = await request.json();
+  const { id, foodName, calories, protein, carbs, fat, mealType } = body;
+
+  if (!id) return NextResponse.json({ error: 'Log ID is required' }, { status: 400 });
+
+  const updatedLog = await prisma.dietLog.update({
+    where: { id },
+    data: {
+      foodName,
+      calories: parseInt(calories.toString()),
+      protein: parseFloat(protein.toString()),
+      carbs: parseFloat(carbs.toString()),
+      fat: parseFloat(fat.toString()),
+      mealType,
+    },
+  });
+
+  return NextResponse.json(updatedLog);
+}

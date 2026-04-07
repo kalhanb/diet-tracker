@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2 } from 'lucide-react';
 import { mealLibrary } from '@/data/mealLibrary';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -64,9 +64,11 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLogForm, setShowLogForm] = useState(false);
+  const [showEditLogForm, setShowEditLogForm] = useState(false);
   const [showWeightForm, setShowWeightForm] = useState(false);
   const [showPantryForm, setShowPantryForm] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editingLog, setEditingLog] = useState<DietLog | null>(null);
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -137,6 +139,32 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       setShowLogForm(false);
       setFormData({ foodName: '', calories: '', protein: '', carbs: '', fat: '', mealType: 'Breakfast' });
     }
+  };
+
+  const handleEditLog = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingLog) return;
+      
+      const res = await fetch('/api/logs', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingLog),
+      });
+      
+      if (res.ok) {
+          fetchLogs();
+          setShowEditLogForm(false);
+          setEditingLog(null);
+      }
+  };
+
+  const handleDeleteLog = async (id: string) => {
+      if (!confirm('Are you sure you want to delete this log?')) return;
+      
+      const res = await fetch(`/api/logs?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+          fetchLogs();
+      }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -339,10 +367,16 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 logs.map((log) => (
                   <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-raised)', padding: '1.25rem 1.5rem', borderRadius: '1rem' }}>
                     <div>
-                      <h4 style={{ fontSize: '1.1rem' }}>{log.foodName}</h4>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{log.mealType} • P: {log.protein}g | C: {log.carbs}g | F: {log.fat}g</p>
+                      <h4 style={{ fontSize: '1.1rem', margin: 0 }}>{log.foodName}</h4>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>{log.mealType} • P: {log.protein}g | C: {log.carbs}g | F: {log.fat}g</p>
                     </div>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--secondary)' }}>{log.calories} kcal</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--secondary)' }}>{log.calories} kcal</span>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn-secondary" style={{ padding: '0.5rem', opacity: 0.6 }} onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={16} /></button>
+                            <button className="btn-secondary" style={{ padding: '0.5rem', opacity: 0.6, color: 'var(--error)' }} onClick={() => handleDeleteLog(log.id)}><Trash2 size={16} /></button>
+                        </div>
+                    </div>
                   </div>
                 ))
               )}
@@ -560,6 +594,33 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
 
               <button type="submit" className="btn-primary">Update Profile Targets</button>
               <button type="button" className="btn-secondary" onClick={() => setShowProfileEdit(false)}>Close Without Saving</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditLogForm && editingLog && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-card" style={{ maxWidth: '500px', width: '90%' }}>
+            <h2>Edit Meal Log</h2>
+            <form onSubmit={handleEditLog} className="grid" style={{ marginTop: '1.5rem' }}>
+              <input placeholder="Name" value={editingLog.foodName} onChange={e => setEditingLog({ ...editingLog, foodName: e.target.value })} required />
+              <div className="grid grid-cols-2">
+                <input placeholder="Kcal" type="number" value={editingLog.calories} onChange={e => setEditingLog({ ...editingLog, calories: parseInt(e.target.value) })} required />
+                <select value={editingLog.mealType} onChange={e => setEditingLog({ ...editingLog, mealType: e.target.value })}>
+                   <option value="Breakfast">Breakfast</option>
+                   <option value="Lunch">Lunch</option>
+                   <option value="Dinner">Dinner</option>
+                   <option value="Snacks">Snack</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-3">
+                <input placeholder="P (g)" type="number" step="0.1" value={editingLog.protein} onChange={e => setEditingLog({ ...editingLog, protein: parseFloat(e.target.value) })} />
+                <input placeholder="C (g)" type="number" step="0.1" value={editingLog.carbs} onChange={e => setEditingLog({ ...editingLog, carbs: parseFloat(e.target.value) })} />
+                <input placeholder="F (g)" type="number" step="0.1" value={editingLog.fat} onChange={e => setEditingLog({ ...editingLog, fat: parseFloat(e.target.value) })} />
+              </div>
+              <button type="submit" className="btn-primary">Save Changes</button>
+              <button type="button" className="btn-secondary" onClick={() => { setShowEditLogForm(false); setEditingLog(null); }}>Cancel</button>
             </form>
           </div>
         </div>
