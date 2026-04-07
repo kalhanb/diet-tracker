@@ -73,8 +73,8 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
                         <Users size={24} color="var(--primary)" />
                     </div>
                     <div>
-                        <h3 style={{ margin: 0 }}>{user.name}</h3>
-                        <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.6 }}>{user.age} yrs | {user.weight}kg</p>
+                        <h3 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 700 }}>{user.name}</h3>
+                        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{user.age} yrs | {user.weight}kg</p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -85,7 +85,7 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
             ))}
             <button className="glass-card" onClick={() => setShowForm(true)} style={{ border: '2px dashed rgba(255,255,255,0.1)', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '2.5rem' }}>
                 <Plus size={48} color="var(--primary)" />
-                <span style={{ fontWeight: 600 }}>Create New Elite Profile</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem' }}>Create New Elite Profile</span>
             </button>
           </div>
         </div>
