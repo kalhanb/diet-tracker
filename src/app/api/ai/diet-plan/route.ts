@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       reply = (response.content[0] as any).text || "";
     } else {
       // Default to Gemini
-      const model = genAI.getGenerativeModel({ model: modelId || 'gemini-3.0-flash', systemInstruction: systemInstruction });
+      const model = genAI.getGenerativeModel({ model: modelId || 'gemini-2.0-flash', systemInstruction: systemInstruction });
       const chat = model.startChat({ history: (messages as any[])?.slice(0, -1) || [] });
       const result = await chat.sendMessage(lastMessage);
       reply = (await result.response).text();
