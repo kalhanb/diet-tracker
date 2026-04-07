@@ -180,8 +180,8 @@ export default function Dashboard({ user, onBack }: { user: User, onBack: () => 
       const data = await res.json();
       if (data.reply) {
         const fullContent = data.reply;
-        const mealMatch = fullContent.match(/<MEALS_JSON>(.*?)<\/MEALS_JSON>/s);
-        const cleanContent = fullContent.replace(/<MEALS_JSON>.*?<\/MEALS_JSON>/s, '').trim();
+        const mealMatch = fullContent.match(/<MEALS_JSON>([\s\S]*?)<\/MEALS_JSON>/);
+        const cleanContent = fullContent.replace(/<MEALS_JSON>[\s\S]*?<\/MEALS_JSON>/, '').trim();
         
         if (mealMatch) {
             try {
