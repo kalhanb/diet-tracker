@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
     You are a professional world-class sports dietitian. 
