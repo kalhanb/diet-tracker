@@ -56,3 +56,10 @@ model PantryItem {
   user      User     @relation(fields: [userId], references: [id])
   name      String   // User only needs to provide the name
 }
+
+model GlobalConfig {
+  id             String   @id @default("active_config")
+  activeProvider String   @default("gemini") // gemini, openai, anthropic
+  activeModel    String   @default("gemini-3.0-flash")
+  updatedAt      DateTime @updatedAt
+}

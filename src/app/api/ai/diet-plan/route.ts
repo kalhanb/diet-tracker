@@ -1,20 +1,28 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { OpenAI } from 'openai';
+import { Anthropic } from '@anthropic-ai/sdk';
 import { prisma } from '@/lib/db';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
 
 export async function POST(request: Request) {
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: 'GEMINI_API_KEY is missing.' }, { status: 500 });
-  }
-
   const { userId, messages } = await request.json();
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
+  // 1. Get Global Config
+  let config = await prisma.globalConfig.findUnique({ where: { id: 'active_config' } });
+  if (!config) config = await prisma.globalConfig.create({ data: { id: 'active_config' } });
+
+  const provider = config.activeProvider;
+  const modelId = config.activeModel;
+
+  // 2. Fetch User & Clinical Context
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -23,9 +31,7 @@ export async function POST(request: Request) {
     },
   });
 
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   const caloriesToday = user.logs.reduce((sum: number, log: any) => sum + log.calories, 0);
   const proteinToday = user.logs.reduce((sum: number, log: any) => sum + (log.protein || 0), 0);
@@ -42,50 +48,43 @@ export async function POST(request: Request) {
   
   const currentPantry = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Salmon, Shrimps, Quinoa, Berries, etc.";
 
-  // System Instructions optimized for Clinical Autonomy
   const systemInstruction = `You are a world-class professional clinical dietitian. ${user.name}, Age ${user.age}, Weight ${user.weight}kg, Height ${user.height}cm, Gender ${user.gender}. Goal: ${user.goalType}.
-    
-    CLINICAL PROFILE:
-    ${clinicalProfile}
+    CLINICAL PROFILE: ${clinicalProfile}
+    CURRENT STATUS: ${caloriesToday} kcal today. Target: ${user.dailyCalories} kcal.
+    PANTRY: ${currentPantry}.
+    FORMATTING RULES: 1. USE MARKDOWN TABLES. 2. USE BOLD HEADINGS. 3. BE CONCISE.
+    IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the very end.`;
 
-    CURRENT STATUS FOR TODAY: Consumed ${caloriesToday} kcal, ${proteinToday}g Protein, ${carbsToday}g Carbs, ${fatToday}g Fat. Target: ${user.dailyCalories} kcal.
-    
-    PANTRY (The user has these items ONLY): ${currentPantry}.
-
-    FORMATTING RULES:
-    1. USE MARKDOWN TABLES for all meal plans and nutritional comparisons.
-    2. USE BOLD HEADINGS for sections (e.g., ## Clinical Analysis, ## Daily Nutrition Plan).
-    3. USE EMOJIS for a premium, friendly coach feel.
-    4. HIGHLIGHT key medical advice using bold or bullet points.
-    5. BE CONCISE. Don't ramble.
-
-    REMEMBER: You have clinical autonomy. Adjust advice for the user's specific bio-markers.
-    1. EXCLUSIVE INGREDIENTS: Build meal plans ONLY using these pantry items.
-    2. BE THE DATABASE: The user has only provided names. YOU must provide the exact Calories, Protein, Carbs, and Fats for the suggested amount.
-    3. SERVING SIZES: Tell the user EXACTLY how much to have (e.g., "150g Kirkland Shrimp", "2 Large Eggs").
-    4. HEART/THYROID: Align nutrients for LDL management (fiber!) and Thyroid timing if applicable.
-    5. SUGGESTIONS: If a critical nutrient is missing (e.g., healthy fats), suggest what they should ADD to their shopping list.
-    
-    IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the VERY end.`;
-
-  const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3.0-flash',
-    systemInstruction: systemInstruction 
-  });
+  const lastMessage = messages[messages.length - 1].parts[0].text;
 
   try {
-     const chat = model.startChat({
-        history: (messages as any[])?.slice(0, -1) || [],
-     });
-     
-     const lastMessage = messages[messages.length - 1].parts[0].text;
-     const result = await chat.sendMessage(lastMessage);
-     const response = await result.response;
-     const text = response.text();
+    let reply = "";
 
-    return NextResponse.json({ reply: text });
+    if (provider === 'openai' && process.env.OPENAI_API_KEY) {
+      const response = await openai.chat.completions.create({
+        model: modelId || "gpt-4o",
+        messages: [{ role: "system", content: systemInstruction }, { role: "user", content: lastMessage }],
+      });
+      reply = response.choices[0].message.content || "";
+    } else if (provider === 'anthropic' && process.env.ANTHROPIC_API_KEY) {
+      const response = await anthropic.messages.create({
+        model: modelId || "claude-3-5-sonnet-20240620",
+        max_tokens: 1024,
+        system: systemInstruction,
+        messages: [{ role: "user", content: lastMessage }],
+      });
+      reply = (response.content[0] as any).text || "";
+    } else {
+      // Default to Gemini
+      const model = genAI.getGenerativeModel({ model: modelId || 'gemini-3.0-flash', systemInstruction: systemInstruction });
+      const chat = model.startChat({ history: (messages as any[])?.slice(0, -1) || [] });
+      const result = await chat.sendMessage(lastMessage);
+      reply = (await result.response).text();
+    }
+
+    return NextResponse.json({ reply });
   } catch (error: any) {
-    console.error('Gemini AI Error:', error);
-    return NextResponse.json({ error: `AI Error: ${error?.message}` }, { status: 500 });
+    console.error('AI Orchestrator Error:', error);
+    return NextResponse.json({ error: `AI Orchestrator Error: ${error?.message}` }, { status: 500 });
   }
 }

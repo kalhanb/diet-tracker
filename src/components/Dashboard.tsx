@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2, Maximize2, Minimize2 } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2, Maximize2, Minimize2, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
 
@@ -71,6 +71,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [editingLog, setEditingLog] = useState<DietLog | null>(null);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
+  const [activeConfig, setActiveConfig] = useState({ activeProvider: 'gemini', activeModel: 'gemini-3.0-flash' });
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -121,6 +122,17 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     fetchLogs();
     fetchWeightLogs();
     fetchPantry();
+    const fetchConfig = async () => {
+        try {
+            const res = await fetch('/api/admin/config');
+            const data = await res.json();
+            setActiveConfig(data);
+        } catch (error) {
+            console.error('Failed to fetch config');
+        }
+    };
+
+    fetchConfig();
   }, [fetchLogs, fetchWeightLogs, fetchPantry]);
 
   useEffect(() => {
@@ -275,6 +287,20 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     setTimeout(() => setLoggingStatus(null), 3000);
   };
 
+  const updateGlobalConfig = async (provider: string, model: string) => {
+    try {
+        const res = await fetch('/api/admin/config', {
+            method: 'PATCH',
+            body: JSON.stringify({ activeProvider: provider, activeModel: model }),
+        });
+        const data = await res.json();
+        setActiveConfig(data);
+        alert(`AI Engine switched to ${provider} (${model})`);
+    } catch (error) {
+        alert('Failed to update AI configuration');
+    }
+  };
+
   const renderMarkdown = (text: string) => {
     // Simple table parser
     const parts = text.split(/((\|.*\|\n)+)/);
@@ -356,7 +382,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
             { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Stats' },
             { id: 'trends', icon: <TrendingUp size={20} />, label: 'Trends' },
             { id: 'diet-plans', icon: <Sparkles size={20} />, label: 'AI Coach' },
-            { id: 'pantry', icon: <ShoppingBag size={20} />, label: 'Pantry' }
+            { id: 'pantry', icon: <ShoppingBag size={20} />, label: 'Pantry' },
+            { id: 'admin', icon: <ShieldCheck size={20} />, label: 'Admin' }
         ].map((tab) => (
             <button
                 key={tab.id}
