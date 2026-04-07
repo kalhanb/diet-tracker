@@ -30,27 +30,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const medicalInfo = `
-    MEDICAL PROFILE:
-    - Current LDL: ${user.ldlLevel || 'Not set'}
-    - Medications: ${user.medications || 'None'}
-    - Goal: ${user.goalType.toUpperCase()}
+  const bmrBase = `
+    PROFILE: ${user.name}, Age: ${user.age}y/o, Weight: ${user.weight}kg, Goal: ${user.goalType.toUpperCase()}
+    DAILY TARGET: ${user.dailyCalories} kcal
   `;
 
-  const pantryItems = user.pantry.map(i => i.name).join(', ') || "Kirkland Stir Fry Vegetables, Liquid Egg Whites, Whole Eggs, Kirkland Thin Sliced Skinless Breasts, Shrimps, Salmon, Chia Seeds, Almonds, Avocado, Quinoa, Kirkland Three Berry Blend";
+  const medicalAnalysis = [];
+  if (user.ldlLevel && user.ldlLevel > 110) {
+      medicalAnalysis.push(`HEART HEALTH: LDL is ${user.ldlLevel}. Prioritize soluble fiber (oats, berries, legumes) and lean proteins. Limit saturated fats.`);
+  }
+  if (user.medications && user.medications.toLowerCase().includes('levothyroxine')) {
+      medicalAnalysis.push(`THYROID CARE: User takes Levothyroxine. Advise on medicine timing (wait 60 mins before food/coffee). Limit raw cruciferous/soy in excess.`);
+  }
+  if (user.medications && !user.medications.toLowerCase().includes('levothyroxine')) {
+      medicalAnalysis.push(`MEDICATION ANALYSIS: The user takes ${user.medications}. Consider potential nutritional interactions/timing if applicable.`);
+  }
 
-  // Highly specialized medical-nutrition system instructions
-  const systemInstruction = `You are a professional world-class sports dietitian and clinical nutritionist. 
-    Profile: ${user.name}, Age: ${user.age}, Weight: ${user.weight}kg.
-    ${medicalInfo}
-    Pantry Stock: ${pantryItems}.
+  const pantryItems = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Berries, etc.";
+
+  // Dynamic Instructions based ONLY on the specific User Profile
+  const systemInstruction = `You are a professional world-class sports dietitian.
+    ${bmrBase}
+    ${medicalAnalysis.join('\n    ')}
+    
+    PANTRY: ${pantryItems}.
 
     INSTRUCTIONS:
-    1. HEART HEALTH: Focus on low saturated fat and high soluble fiber to manage LDL ${user.ldlLevel}.
-    2. THYROID CARE: If user takes Levothyroxine, advise on timing (e.g., waiting 60 mins before food/coffee). Limit large amounts of raw cruciferous vegetables or soy unless cooked/moderate.
-    3. GAP ANALYSIS: If the pantry is missing key nutrients (e.g., Vitamin D, Omega-3s, Zinc), explicitly suggest specific items to buy.
-    4. FORMATTING: Use BOLD text for meal names. Use bullet points. Use ### for headers. Use emojis. Make it VERY readable.
-    
+    1. Base all plans on the user's specific Bio-Markers and Pantry items listed above.
+    2. Suggest new items IF their current pantry is missing key nutrients for their specific health context.
+    3. Use BOLD text for meal names, use bullet points, and use ### for headers.
+    4. Format the final output with high-readability.
+
     IMPORTANT: Append a JSON block at the end inside <MEALS_JSON> tags.
     Format: <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON>`;
 
