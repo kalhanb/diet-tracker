@@ -3,7 +3,7 @@ services:
     name: diet-tracker
     runtime: node
     plan: free
-    buildCommand: npm install && prisma generate && npm run build
+    buildCommand: npm install && prisma generate && npx prisma db push && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
