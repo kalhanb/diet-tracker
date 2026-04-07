@@ -6,10 +6,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: 'GEMINI_API_KEY is missing from environment variables.' }, { status: 500 });
+    return NextResponse.json({ error: 'GEMINI_API_KEY is missing.' }, { status: 500 });
   }
 
-  const { userId } = await request.json();
+  const { userId, messages } = await request.json();
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -30,52 +30,40 @@ export async function POST(request: Request) {
   }
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const chat = model.startChat({
+    history: messages?.slice(0, -1) || [],
+  });
 
-  const prompt = `
-    You are a professional world-class sports dietitian. 
-    Analyze the following user profile and generate a hyper-personalized, one-day high-protein meal plan.
-    
+  const bmrInfo = `
     User Profile:
     - Name: ${user.name}
     - Age: ${user.age}
-    - Current Weight: ${user.weight}kg
+    - Weight: ${user.weight}kg
     - Height: ${user.height}cm
-    - Goal: ${user.goalType.toUpperCase()} weight (Target: ${user.targetWeight}kg)
-    - Activity Level: ${user.activityLevel}
-    - Calculated Daily Target Calories: ${user.dailyCalories} kcal
+    - Goal: ${user.goalType.toUpperCase()}
+    - Daily Calories Target: ${user.dailyCalories} kcal
 
-    Recent Logs for context:
+    Recent History:
     ${user.logs.map(log => `- ${log.foodName}: ${log.calories} kcal`).join('\n')}
-
-    Guidelines:
-    1. Focus on clean, high-protein ingredients (e.g., Salmon, Stir-Fry vegetables, Chicken, Greek Yogurt).
-    2. Incorporate Matcha as a health/metabolism boost in one of the snack/drink slots.
-    3. The total calories for the day MUST stay within +/- 100 kcal of the target: ${user.dailyCalories} kcal.
-    4. Provide specific macros (Protein, Carbs, Fat) for each meal.
-    5. Format the response in BEAUTIFUL, clean Markdown with headings and emojis.
-    6. Include a "Dietitian's Professional Insight" at the end explaining WHY this plan works for their specific ${user.goalType} goal.
   `;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+  // Pre-seed the system's persona and user data if history is empty
+  const systemContext = `You are a professional world-class sports dietitian. Here is the user's data: ${bmrInfo}. 
+    Your goal is to provide high-protein, clean meal plans with salmon, stir-fry, and matcha focus. 
+    Be supportive, encouraging, and medically grounded.`;
 
-    return NextResponse.json({ plan: text });
+  try {
+     const history = messages?.slice(0, -1) || [];
+     const lastMessage = messages[messages.length - 1].parts[0].text;
+     const finalPrompt = history.length === 0 ? `${systemContext}\n\nUser Request: ${lastMessage}` : lastMessage;
+     
+     const result = await model.generateContent(finalPrompt); // Simplifying for 2.5 Flash direct prompt
+     const response = await result.response;
+     const text = response.text();
+
+    return NextResponse.json({ reply: text });
   } catch (error: any) {
     console.error('Gemini AI Error:', error);
-    
-    // Deep Scan for debugging
-    let available = "Unknown";
-    let scanStatus = 0;
-    try {
-        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
-        scanStatus = listRes.status;
-        const listData = await listRes.json();
-        available = (listData.models || []).map((m: any) => m.name.replace('models/', '')).join(", ");
-    } catch (e) {}
-
-    const errorMessage = error?.message || 'Failed to generate AI plan';
-    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}. Scan Status: ${scanStatus}. Available models: ${available}` }, { status: 500 });
+    return NextResponse.json({ error: `AI Diagnostic: ${error?.message}` }, { status: 500 });
   }
 }
