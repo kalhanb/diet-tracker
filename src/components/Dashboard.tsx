@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2 } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2, Maximize2, Minimize2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -69,6 +70,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [showPantryForm, setShowPantryForm] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [editingLog, setEditingLog] = useState<DietLog | null>(null);
+  const [isAiExpanded, setIsAiExpanded] = useState(false);
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -273,6 +275,46 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     setTimeout(() => setLoggingStatus(null), 3000);
   };
 
+  const renderMarkdown = (text: string) => {
+    // Simple table parser
+    const parts = text.split(/((\|.*\|\n)+)/);
+    return parts.map((part, i) => {
+      if (part.match(/\|.*\|/)) {
+        const rows = part.trim().split('\n');
+        return (
+          <div key={i} className="table-container" style={{ overflowX: 'auto', margin: '1rem 0' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  {rows[0].split('|').filter(c => c.trim()).map((cell, j) => (
+                    <th key={j} style={{ padding: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>{cell.trim()}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.slice(2).map((row, j) => (
+                  <tr key={j}>
+                    {row.split('|').filter(c => c.trim()).map((cell, k) => (
+                      <td key={k} style={{ padding: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>{cell.trim()}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+      
+      // Headers
+      const lines = part.split('\n');
+      return lines.map((line, j) => {
+          if (line.startsWith('## ')) return <h2 key={`${i}-${j}`} style={{ color: 'var(--primary)', marginBottom: '0.75rem' }}>{line.replace('## ', '')}</h2>;
+          if (line.startsWith('### ')) return <h3 key={`${i}-${j}`} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>{line.replace('### ', '')}</h3>;
+          return <p key={`${i}-${j}`} style={{ marginBottom: '0.5rem' }}>{line}</p>;
+      });
+    });
+  };
+
   const caloriesConsumed = logs.reduce((sum, log) => sum + log.calories, 0);
   const caloriesRemaining = user.dailyCalories - caloriesConsumed;
   const progressPercent = Math.min((caloriesConsumed / user.dailyCalories) * 100, 100);
@@ -395,17 +437,36 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       )}
 
       {activeTab === 'diet-plans' && (
-        <div className="grid grid-cols-2">
+        <div className="grid" style={{ gridTemplateColumns: isAiExpanded ? '1fr' : '1.3fr 0.7fr', gap: '2rem', alignItems: 'start' }}>
           {/* Left Side: Interactive AI Coach */}
-          <section className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: '650px', background: 'rgba(30, 41, 59, 0.4)' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--primary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Sparkles size={20} color="white" />
+          <motion.section 
+            layout
+            className="glass-card" 
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              height: isAiExpanded ? '80vh' : '650px', 
+              background: 'rgba(30, 41, 59, 0.4)',
+              transition: '0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--primary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Sparkles size={20} color="white" />
+                    </div>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>AI Sports Dietitian</h2>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Personalized Goal Coaching</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem' }}>AI Sports Dietitian</h2>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Personalized Goal Coaching</p>
-                </div>
+                <button 
+                  className="btn-secondary" 
+                  style={{ padding: '0.5rem' }} 
+                  onClick={() => setIsAiExpanded(!isAiExpanded)}
+                >
+                    {isAiExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                </button>
              </div>
 
              <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingRight: '0.5rem', marginBottom: '1.5rem' }}>
@@ -416,16 +477,16 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                     </div>
                 ) : (
                     chatMessages.map((msg, i) => (
-                        <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                        <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: isAiExpanded ? '90%' : '85%' }}>
                             <div style={{
                                 padding: '1.25rem', borderRadius: '1rem',
                                 background: msg.role === 'user' ? 'var(--primary)' : 'var(--surface-raised)',
                                 color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
                                 borderTopLeftRadius: msg.role === 'model' ? '0' : '1rem',
                                 borderTopRightRadius: msg.role === 'user' ? '0' : '1rem',
-                                fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap'
+                                fontSize: '0.95rem', lineHeight: 1.6
                             }}>
-                                {msg.parts[0].text}
+                                {msg.role === 'model' ? renderMarkdown(msg.parts[0].text) : msg.parts[0].text}
                             </div>
                             {msg.role === 'model' && parsedMeals[i] && (
                                 <button
@@ -447,23 +508,25 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 <input placeholder="Ask me anything..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
                 <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading || !chatInput.trim()}><Send size={18} /></button>
              </div>
-          </section>
+          </motion.section>
 
           {/* Right Side: Quick History Library */}
-          <section className="grid" style={{ alignContent: 'start' }}>
-            <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Favorite Items</h2>
-            <div className="grid">
-                {mealLibrary.slice(0, 5).map((meal) => (
-                    <div key={meal.id} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ fontSize: '0.95rem' }}>{meal.name}</h4>
-                        <button className="btn-primary" style={{ padding: '0.5rem' }} onClick={() => {
-                            setFormData({ foodName: meal.name, calories: meal.calories.toString(), protein: meal.protein.toString(), carbs: meal.carbs.toString(), fat: meal.fat.toString(), mealType: meal.category });
-                            setShowLogForm(true);
-                        }}><Plus size={18} /></button>
-                    </div>
-                ))}
-            </div>
-          </section>
+          {!isAiExpanded && (
+              <section className="grid" style={{ alignContent: 'start' }}>
+                <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Favorite Items</h2>
+                <div className="grid">
+                    {mealLibrary.slice(0, 5).map((meal) => (
+                        <div key={meal.id} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h4 style={{ fontSize: '0.95rem' }}>{meal.name}</h4>
+                            <button className="btn-primary" style={{ padding: '0.5rem' }} onClick={() => {
+                                setFormData({ foodName: meal.name, calories: meal.calories.toString(), protein: meal.protein.toString(), carbs: meal.carbs.toString(), fat: meal.fat.toString(), mealType: meal.category });
+                                setShowLogForm(true);
+                            }}><Plus size={18} /></button>
+                        </div>
+                    ))}
+                </div>
+              </section>
+          )}
         </div>
       )}
 

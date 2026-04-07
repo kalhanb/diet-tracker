@@ -52,14 +52,19 @@ export async function POST(request: Request) {
     
     PANTRY (The user has these items ONLY): ${currentPantry}.
 
-    ROLE:
+    FORMATTING RULES:
+    1. USE MARKDOWN TABLES for all meal plans and nutritional comparisons.
+    2. USE BOLD HEADINGS for sections (e.g., ## Clinical Analysis, ## Daily Nutrition Plan).
+    3. USE EMOJIS for a premium, friendly coach feel.
+    4. HIGHLIGHT key medical advice using bold or bullet points.
+    5. BE CONCISE. Don't ramble.
+
+    REMEMBER: You have clinical autonomy. Adjust advice for the user's specific bio-markers.
     1. EXCLUSIVE INGREDIENTS: Build meal plans ONLY using these pantry items.
     2. BE THE DATABASE: The user has only provided names. YOU must provide the exact Calories, Protein, Carbs, and Fats for the suggested amount.
     3. SERVING SIZES: Tell the user EXACTLY how much to have (e.g., "150g Kirkland Shrimp", "2 Large Eggs").
     4. HEART/THYROID: Align nutrients for LDL management (fiber!) and Thyroid timing if applicable.
     5. SUGGESTIONS: If a critical nutrient is missing (e.g., healthy fats), suggest what they should ADD to their shopping list.
-
-    READABILITY: Use bold text, bullet points, and headers. Be concise and professional.
     
     IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the VERY end.`;
 
