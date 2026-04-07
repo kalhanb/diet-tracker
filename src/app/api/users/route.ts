@@ -35,3 +35,31 @@ export async function POST(request: Request) {
 
   return NextResponse.json(user);
 }
+
+export async function PATCH(request: Request) {
+    const body = await request.json();
+    const { id, name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, medications } = body;
+
+    const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
+    const tdee = calculateTDEE(bmr, activityLevel);
+    const dailyCalories = getRecommendedCalories(tdee, goalType);
+
+    const updatedUser = await prisma.user.update({
+        where: { id },
+        data: {
+            name,
+            age: parseInt(age),
+            gender,
+            weight: parseFloat(weight),
+            height: parseFloat(height),
+            activityLevel,
+            goalType,
+            targetWeight: parseFloat(targetWeight),
+            dailyCalories,
+            ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
+            medications: medications || null,
+        },
+    });
+
+    return NextResponse.json(updatedUser);
+}

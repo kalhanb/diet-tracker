@@ -18,10 +18,7 @@ export async function POST(request: Request) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      logs: {
-        take: 5,
-        orderBy: { date: 'desc' },
-      },
+      logs: { take: 10, orderBy: { date: 'desc' } },
       pantry: true,
     },
   });
@@ -30,39 +27,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const bmrBase = `
-    PROFILE: ${user.name}, Age: ${user.age}y/o, Weight: ${user.weight}kg, Goal: ${user.goalType.toUpperCase()}
-    DAILY TARGET: ${user.dailyCalories} kcal
-  `;
-
   const medicalAnalysis = [];
-  if (user.ldlLevel && user.ldlLevel > 110) {
-      medicalAnalysis.push(`HEART HEALTH: LDL is ${user.ldlLevel}. Prioritize soluble fiber (oats, berries, legumes) and lean proteins. Limit saturated fats.`);
-  }
-  if (user.medications && user.medications.toLowerCase().includes('levothyroxine')) {
-      medicalAnalysis.push(`THYROID CARE: User takes Levothyroxine. Advise on medicine timing (wait 60 mins before food/coffee). Limit raw cruciferous/soy in excess.`);
-  }
-  if (user.medications && !user.medications.toLowerCase().includes('levothyroxine')) {
-      medicalAnalysis.push(`MEDICATION ANALYSIS: The user takes ${user.medications}. Consider potential nutritional interactions/timing if applicable.`);
-  }
+  if (user.ldlLevel && user.ldlLevel > 110) medicalAnalysis.push(` LDL CONTEXT: ${user.ldlLevel} mg/dL (Requires low saturated fat, high soluble fiber).`);
+  if (user.medications && user.medications.toLowerCase().includes('levothyroxine')) medicalAnalysis.push(" MEDICATION: On Levothyroxine. Needs 60-min morning fasting; careful with soy/raw cruciferous.");
+  
+  const currentPantry = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Salmon, Shrimps, Quinoa, Berries, etc.";
 
-  const pantryItems = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Berries, etc.";
-
-  // Dynamic Instructions based ONLY on the specific User Profile
-  const systemInstruction = `You are a professional world-class sports dietitian.
-    ${bmrBase}
+  // System Instructions optimized for AI-Calculated Nutrition
+  const systemInstruction = `You are a world-class professional dietitian. ${user.name}, Age ${user.age}. Goal: ${user.goalType}.
     ${medicalAnalysis.join('\n    ')}
     
-    PANTRY: ${pantryItems}.
+    PANTRY (The user has these items ONLY): ${currentPantry}.
 
-    INSTRUCTIONS:
-    1. Base all plans on the user's specific Bio-Markers and Pantry items listed above.
-    2. Suggest new items IF their current pantry is missing key nutrients for their specific health context.
-    3. Use BOLD text for meal names, use bullet points, and use ### for headers.
-    4. Format the final output with high-readability.
+    ROLE:
+    1. EXCLUSIVE INGREDIENTS: Build meal plans ONLY using these pantry items.
+    2. BE THE DATABASE: The user has only provided names. YOU must provide the exact Calories, Protein, Carbs, and Fats for the suggested amount.
+    3. SERVING SIZES: Tell the user EXACTLY how much to have (e.g., "150g Kirkland Shrimp", "2 Large Eggs").
+    4. HEART/THYROID: Align nutrients for LDL management (fiber!) and Thyroid timing if applicable.
+    5. SUGGESTIONS: If a critical nutrient is missing (e.g., healthy fats), suggest what they should ADD to their shopping list.
 
-    IMPORTANT: Append a JSON block at the end inside <MEALS_JSON> tags.
-    Format: <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON>`;
+    READABILITY: Use bold text, bullet points, and headers. Be concise and professional.
+
+    IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the VERY end.`;
 
   const model = genAI.getGenerativeModel({ 
     model: 'gemini-2.5-flash',
