@@ -75,8 +75,9 @@ export async function POST(request: Request) {
       });
       reply = (response.content[0] as any).text || "";
     } else {
-      // Default to Gemini
-      const model = genAI.getGenerativeModel({ model: modelId || 'gemini-2.0-flash', systemInstruction: systemInstruction });
+      // Default to Gemini (and catch the invalid 3.0 ID)
+      const sanitizedModel = (modelId === 'gemini-3.0-flash' || !modelId) ? 'gemini-1.5-flash-latest' : modelId;
+      const model = genAI.getGenerativeModel({ model: sanitizedModel, systemInstruction: systemInstruction });
       const chat = model.startChat({ history: (messages as any[])?.slice(0, -1) || [] });
       const result = await chat.sendMessage(lastMessage);
       reply = (await result.response).text();
