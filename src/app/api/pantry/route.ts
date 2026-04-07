@@ -17,19 +17,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { userId, name, calories, protein, carbs, fat, category } = body;
+  const { userId, name } = body; // Simplified to only name and userId
 
-  if (!userId) return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+  if (!userId || !name) {
+      return NextResponse.json({ error: 'User ID and Name are required' }, { status: 400 });
+  }
 
   const item = await prisma.pantryItem.create({
     data: {
       userId,
       name,
-      calories: parseInt(calories),
-      protein: parseFloat(protein || 0),
-      carbs: parseFloat(carbs || 0),
-      fat: parseFloat(fat || 0),
-      category: category || 'Snack',
     },
   });
 
