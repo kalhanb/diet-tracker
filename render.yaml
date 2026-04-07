@@ -10,3 +10,5 @@ services:
         value: 18.18.1
       - key: DATABASE_URL
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false

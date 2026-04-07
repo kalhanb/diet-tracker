@@ -42,6 +42,8 @@ export default function Dashboard({ user, onBack }: { user: User, onBack: () => 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLogForm, setShowLogForm] = useState(false);
   const [showWeightForm, setShowWeightForm] = useState(false);
+  const [aiPlan, setAiPlan] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     foodName: '',
     calories: '',
@@ -73,6 +75,29 @@ export default function Dashboard({ user, onBack }: { user: User, onBack: () => 
       console.error('Failed to fetch weight logs', e);
     }
   }, [user.id]);
+
+  const generateAiPlan = async () => {
+    setIsAiLoading(true);
+    setAiPlan('');
+    try {
+      const res = await fetch('/api/ai/diet-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.plan) {
+        setAiPlan(data.plan);
+      } else {
+        setAiPlan("### ⚠️ Error\nCould not generate your AI plan. Please check your **GEMINI_API_KEY**.");
+      }
+    } catch (e) {
+      console.error('AI error:', e);
+      setAiPlan("### ⚠️ Connectivity Error\nFailed to reach the AI dietitian.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchLogs();
@@ -232,7 +257,34 @@ export default function Dashboard({ user, onBack }: { user: User, onBack: () => 
 
       {activeTab === 'diet-plans' && (
         <section>
-          <h2 style={{ marginBottom: '1.5rem' }}>High-Protein Suggestions</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+             <h2 style={{ margin: 0 }}>Smart Nutrition Engine</h2>
+             <button
+               className="btn-primary"
+               onClick={generateAiPlan}
+               disabled={isAiLoading}
+               style={{ background: 'linear-gradient(135deg, var(--accent), var(--primary))' }}
+             >
+               {isAiLoading ? <span className="loader-dots">Thinking...</span> : <><Sparkles size={18} /> Generate AI Meal Plan</>}
+             </button>
+          </div>
+
+          {aiPlan && (
+            <div className="glass-card" style={{ marginBottom: '2.5rem', background: 'rgba(192, 132, 252, 0.05)', border: '1px solid rgba(192, 132, 252, 0.2)' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: 'var(--accent)' }}>
+                  <Sparkles size={24} />
+                  <h3 style={{ margin: 0 }}>Customized AI Nutritionist Suggestion</h3>
+               </div>
+               <div style={{ color: 'var(--text-primary)', lineHeight: 1.8, fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
+                  {aiPlan}
+               </div>
+               <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button className="btn-secondary" onClick={() => setAiPlan('')}>Dismiss AI Suggestion</button>
+               </div>
+            </div>
+          )}
+
+          <h3 style={{ marginBottom: '1.5rem', opacity: 0.8, fontSize: '1rem' }}>Library Favorites (High-Protein)</h3>
           <div className="grid grid-cols-3">
              {mealLibrary.filter(m => m.calories < caloriesRemaining + 500).map((meal) => (
                <div key={meal.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
