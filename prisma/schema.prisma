@@ -18,9 +18,12 @@ model User {
   goalType      String      
   targetWeight  Float
   dailyCalories Int
+  ldlLevel      Float?      // Added LDL Tracking
+  medications   String?     // Added Medication context
   createdAt     DateTime    @default(now())
   logs          DietLog[]
   weightLogs    WeightLog[]
+  pantry        PantryItem[]
 }
 
 model DietLog {
@@ -42,4 +45,16 @@ model WeightLog {
   user    User     @relation(fields: [userId], references: [id])
   date    DateTime @default(now())
   weight  Float
+}
+
+model PantryItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  calories  Int
+  protein   Float?
+  carbs     Float?
+  fat       Float?
+  category  String   
 }

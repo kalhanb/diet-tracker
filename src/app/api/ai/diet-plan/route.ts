@@ -22,6 +22,7 @@ export async function POST(request: Request) {
         take: 5,
         orderBy: { date: 'desc' },
       },
+      pantry: true,
     },
   });
 
@@ -29,41 +30,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const chat = model.startChat({
-    history: messages?.slice(0, -1) || [],
-  });
-
-  const bmrInfo = `
-    User Profile:
-    - Name: ${user.name}
-    - Age: ${user.age}
-    - Weight: ${user.weight}kg
-    - Height: ${user.height}cm
+  const medicalInfo = `
+    MEDICAL PROFILE:
+    - Current LDL: ${user.ldlLevel || 'Not set'}
+    - Medications: ${user.medications || 'None'}
     - Goal: ${user.goalType.toUpperCase()}
-    - Daily Calories Target: ${user.dailyCalories} kcal
-
-    Recent History:
-    ${user.logs.map(log => `- ${log.foodName}: ${log.calories} kcal`).join('\n')}
   `;
 
-  // Pre-seed the system's persona and user data if history is empty
-  const systemContext = `You are a professional world-class sports dietitian. Here is the user's data: ${bmrInfo}. 
-    Your goal is to provide high-protein, clean meal plans with salmon, stir-fry, and matcha focus. 
-    Be supportive, encouraging, and medically grounded.`;
+  const pantryItems = user.pantry.map(i => i.name).join(', ') || "Kirkland Stir Fry Vegetables, Liquid Egg Whites, Whole Eggs, Kirkland Thin Sliced Skinless Breasts, Shrimps, Salmon, Chia Seeds, Almonds, Avocado, Quinoa, Kirkland Three Berry Blend";
+
+  // Highly specialized medical-nutrition system instructions
+  const systemInstruction = `You are a professional world-class sports dietitian and clinical nutritionist. 
+    Profile: ${user.name}, Age: ${user.age}, Weight: ${user.weight}kg.
+    ${medicalInfo}
+    Pantry Stock: ${pantryItems}.
+
+    INSTRUCTIONS:
+    1. HEART HEALTH: Focus on low saturated fat and high soluble fiber to manage LDL ${user.ldlLevel}.
+    2. THYROID CARE: If user takes Levothyroxine, advise on timing (e.g., waiting 60 mins before food/coffee). Limit large amounts of raw cruciferous vegetables or soy unless cooked/moderate.
+    3. GAP ANALYSIS: If the pantry is missing key nutrients (e.g., Vitamin D, Omega-3s, Zinc), explicitly suggest specific items to buy.
+    4. FORMATTING: Use BOLD text for meal names. Use bullet points. Use ### for headers. Use emojis. Make it VERY readable.
+    
+    IMPORTANT: Append a JSON block at the end inside <MEALS_JSON> tags.
+    Format: <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON>`;
+
+  const model = genAI.getGenerativeModel({ 
+    model: 'gemini-2.5-flash',
+    systemInstruction: systemInstruction 
+  });
 
   try {
-     const history = messages?.slice(0, -1) || [];
-     const lastMessage = messages[messages.length - 1].parts[0].text;
-     const finalPrompt = history.length === 0 ? `${systemContext}\n\nUser Request: ${lastMessage}` : lastMessage;
+     const chat = model.startChat({
+        history: messages?.slice(0, -1) || [],
+     });
      
-     const result = await model.generateContent(finalPrompt); // Simplifying for 2.5 Flash direct prompt
+     const lastMessage = messages[messages.length - 1].parts[0].text;
+     const result = await chat.sendMessage(lastMessage);
      const response = await result.response;
      const text = response.text();
 
     return NextResponse.json({ reply: text });
   } catch (error: any) {
     console.error('Gemini AI Error:', error);
-    return NextResponse.json({ error: `AI Diagnostic: ${error?.message}` }, { status: 500 });
+    return NextResponse.json({ error: `AI Error: ${error?.message}` }, { status: 500 });
   }
 }

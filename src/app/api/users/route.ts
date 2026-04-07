@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, age, gender, weight, height, activityLevel, goalType, targetWeight } = body;
+  const { name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, medications } = body;
 
   const bmr = calculateBMR(weight, height, age, gender);
   const tdee = calculateTDEE(bmr, activityLevel);
@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       goalType,
       targetWeight: parseFloat(targetWeight),
       dailyCalories,
+      ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
+      medications: medications || null,
     },
   });
 

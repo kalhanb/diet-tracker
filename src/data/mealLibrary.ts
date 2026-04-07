@@ -11,83 +11,73 @@ export interface Meal {
 
 export const mealLibrary: Meal[] = [
   {
-    id: '1',
-    name: 'Grilled Salmon with Asparagus',
-    category: 'Lunch',
-    calories: 450,
-    protein: 42,
-    carbs: 5,
-    fat: 28,
-    tags: ['High Protein', 'Omega-3', 'Low Carb']
-  },
-  {
-    id: '2',
-    name: 'Quinoa & Chickpea Salad',
-    category: 'Lunch',
-    calories: 380,
-    protein: 14,
-    carbs: 55,
-    fat: 12,
-    tags: ['Plant-Based', 'High Fiber']
-  },
-  {
-    id: '3',
-    name: 'Chicken and Broccoli Stir-Fry',
+    id: 'k1',
+    name: 'Kirkland Stir Fry Vegetables & Shrimp',
     category: 'Dinner',
-    calories: 410,
-    protein: 48,
-    carbs: 15,
-    fat: 14,
-    tags: ['High Protein', 'Clean']
-  },
-  {
-    id: '4',
-    name: 'Iced Matcha Latte with Almond Milk',
-    category: 'Drink',
-    calories: 90,
-    protein: 2,
-    carbs: 8,
-    fat: 4,
-    tags: ['Matcha', 'Antioxidant']
-  },
-  {
-    id: '5',
-    name: 'Egg White Omelet with Spinach',
-    category: 'Breakfast',
-    calories: 220,
-    protein: 24,
-    carbs: 4,
-    fat: 12,
-    tags: ['Breakfast', 'High Protein']
-  },
-  {
-    id: '6',
-    name: 'Greek Yogurt with Blueberries',
-    category: 'Snack',
-    calories: 180,
-    protein: 15,
-    carbs: 22,
-    fat: 2,
-    tags: ['Probiotic', 'High protein']
-  },
-  {
-    id: '7',
-    name: 'Seared Tuna with Asian Greens',
-    category: 'Dinner',
-    calories: 350,
-    protein: 45,
-    carbs: 10,
-    fat: 8,
-    tags: ['Seafood', 'High Protein']
-  },
-  {
-    id: '8',
-    name: 'Protein Matcha Smoothie',
-    category: 'Breakfast',
-    calories: 280,
-    protein: 25,
+    calories: 320,
+    protein: 34,
     carbs: 18,
     fat: 6,
-    tags: ['Smoothie', 'Matcha', 'Protein']
+    tags: ['Costco', 'High Protein', 'Kirkland']
+  },
+  {
+    id: 'k2',
+    name: 'Egg White & Whole Egg Omelet',
+    category: 'Breakfast',
+    calories: 250,
+    protein: 28,
+    carbs: 4,
+    fat: 14,
+    tags: ['Eggs', 'High Protein']
+  },
+  {
+    id: 'k3',
+    name: 'Kirkland Thin Sliced Chicken Breast',
+    category: 'Lunch',
+    calories: 165,
+    protein: 31,
+    carbs: 0,
+    fat: 3.6,
+    tags: ['Chicken', 'Kirkland', 'Clean']
+  },
+  {
+    id: 'k4',
+    name: 'Wild Caught Salmon with Quinoa',
+    category: 'Lunch',
+    calories: 420,
+    protein: 38,
+    carbs: 35,
+    fat: 16,
+    tags: ['Salmon', 'Omega-3', 'Quinoa']
+  },
+  {
+    id: 'k5',
+    name: 'Kirkland Three Berry Blend Smoothie',
+    category: 'Breakfast',
+    calories: 210,
+    protein: 15,
+    carbs: 28,
+    fat: 4,
+    tags: ['Berries', 'Smoothie']
+  },
+  {
+    id: 'k6',
+    name: 'Almonds & Chia Seed Yogurt',
+    category: 'Snack',
+    calories: 280,
+    protein: 12,
+    carbs: 14,
+    fat: 22,
+    tags: ['Healthy Fats', 'Almonds', 'Chia']
+  },
+  {
+    id: 'k7',
+    name: 'Fresh Orange & Avocado Salad',
+    category: 'Snack',
+    calories: 220,
+    protein: 4,
+    carbs: 18,
+    fat: 15,
+    tags: ['Healthy Fats', 'Vitamins']
   }
 ];
