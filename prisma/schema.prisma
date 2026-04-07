@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(uuid())
+  name          String
+  age           Int
+  gender        String      
+  weight        Float       
+  height        Float       
+  activityLevel String      
+  goalType      String      
+  targetWeight  Float
+  dailyCalories Int
+  createdAt     DateTime    @default(now())
+  logs          DietLog[]
+  weightLogs    WeightLog[]
+}
+
+model DietLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime @default(now())
+  foodName  String
+  calories  Int
+  protein   Float
+  carbs     Float
+  fat       Float
+  mealType  String   
+}
+
+model WeightLog {
+  id      String   @id @default(uuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id])
+  date    DateTime @default(now())
+  weight  Float
+}
