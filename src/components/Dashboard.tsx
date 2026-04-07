@@ -71,7 +71,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [editingLog, setEditingLog] = useState<DietLog | null>(null);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
-  const [activeConfig, setActiveConfig] = useState({ activeProvider: 'gemini', activeModel: 'gemini-3.0-flash' });
+  const [activeConfig, setActiveConfig] = useState({ activeProvider: 'gemini', activeModel: 'gemini-1.5-flash-latest' });
+  const [availableModels, setAvailableModels] = useState<{provider: string, id: string, name: string}[]>([]);
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -132,7 +133,18 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         }
     };
 
+    const fetchModels = async () => {
+        try {
+            const res = await fetch('/api/admin/models');
+            const data = await res.json();
+            if (data.models) setAvailableModels(data.models);
+        } catch (error) {
+            console.error('Failed to fetch models');
+        }
+    };
+
     fetchConfig();
+    fetchModels();
   }, [fetchLogs, fetchWeightLogs, fetchPantry]);
 
   useEffect(() => {
@@ -602,19 +614,34 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                   </div>
 
                   <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Specific Model ID</label>
-                      <input 
-                        type="text" 
+                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Active Model</label>
+                      <select 
                         value={activeConfig.activeModel} 
-                        onChange={(e) => setActiveConfig({...activeConfig, activeModel: e.target.value})}
-                        onBlur={(e) => updateGlobalConfig(activeConfig.activeProvider, (e.target as HTMLInputElement).value)}
-                        placeholder="e.g. gemini-3.0-flash, gpt-4o, claude-3-5-sonnet-20240620"
+                        onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
                         style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
-                      />
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'rgba(56, 189, 248, 0.1)', padding: '0.75rem', borderRadius: '0.5rem', borderLeft: '3px solid var(--primary)' }}>
-                          <strong>Admin Tip:</strong> Ensure your <code>.env</code> file contains the correct API keys for the selected provider.
-                      </p>
+                      >
+                          {availableModels
+                            .filter(m => m.provider === activeConfig.activeProvider)
+                            .map(m => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                          <optgroup label="Custom / Other">
+                              <option value="custom">Manual Entry...</option>
+                          </optgroup>
+                      </select>
                   </div>
+
+                  {activeConfig.activeModel === 'custom' && (
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Manual Model ID</label>
+                          <input 
+                            type="text" 
+                            onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
+                            placeholder="e.g. gpt-4-turbo"
+                            style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
+                          />
+                      </div>
+                  )}
               </div>
           </section>
       )}
