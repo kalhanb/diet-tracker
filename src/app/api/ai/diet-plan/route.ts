@@ -27,6 +27,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
+  const caloriesToday = user.logs.reduce((sum: number, log: any) => sum + log.calories, 0);
+  const proteinToday = user.logs.reduce((sum: number, log: any) => sum + (log.protein || 0), 0);
+  const carbsToday = user.logs.reduce((sum: number, log: any) => sum + (log.carbs || 0), 0);
+  const fatToday = user.logs.reduce((sum: number, log: any) => sum + (log.fat || 0), 0);
+
   const medicalAnalysis = [];
   if (user.ldlLevel && user.ldlLevel > 110) medicalAnalysis.push(` LDL CONTEXT: ${user.ldlLevel} mg/dL (Requires low saturated fat, high soluble fiber).`);
   if (user.medications && user.medications.toLowerCase().includes('levothyroxine')) medicalAnalysis.push(" MEDICATION: On Levothyroxine. Needs 60-min morning fasting; careful with soy/raw cruciferous.");
@@ -34,7 +39,9 @@ export async function POST(request: Request) {
   const currentPantry = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Salmon, Shrimps, Quinoa, Berries, etc.";
 
   // System Instructions optimized for AI-Calculated Nutrition
-  const systemInstruction = `You are a world-class professional dietitian. ${user.name}, Age ${user.age}. Goal: ${user.goalType}.
+  const systemInstruction = `You are a world-class professional dietitian. ${user.name}, Age ${user.age}, Weight ${user.weight}kg, Height ${user.height}cm, Gender ${user.gender}. Goal: ${user.goalType}.
+    CURRENT STATUS FOR TODAY: Consumed ${caloriesToday} kcal, ${proteinToday}g Protein, ${carbsToday}g Carbs, ${fatToday}g Fat. Target: ${user.dailyCalories} kcal.
+    
     ${medicalAnalysis.join('\n    ')}
     
     PANTRY (The user has these items ONLY): ${currentPantry}.
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
     5. SUGGESTIONS: If a critical nutrient is missing (e.g., healthy fats), suggest what they should ADD to their shopping list.
 
     READABILITY: Use bold text, bullet points, and headers. Be concise and professional.
-
+    
     IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the VERY end.`;
 
   const model = genAI.getGenerativeModel({ 
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
 
   try {
      const chat = model.startChat({
-        history: messages?.slice(0, -1) || [],
+        history: (messages as any[])?.slice(0, -1) || [],
      });
      
      const lastMessage = messages[messages.length - 1].parts[0].text;
