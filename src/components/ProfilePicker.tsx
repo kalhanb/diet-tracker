@@ -30,7 +30,10 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
     goalType: 'loss',
     targetWeight: '',
     ldlLevel: '',
-    medications: ''
+    glucoseLevel: '',
+    bloodPressure: '',
+    medications: '',
+    healthConditions: ''
   });
 
   useEffect(() => {
@@ -129,10 +132,15 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
                     <h4 style={{ margin: 0 }}>Clinical Bio-Markers (Important for AI Accuracy)</h4>
                 </div>
                 <div className="grid grid-cols-2">
-                    <input placeholder="LDL Level (mg/dL) - e.g. 119" type="number" step="1" value={formData.ldlLevel} onChange={e => setFormData({...formData, ldlLevel: e.target.value})} />
-                    <input placeholder="Medications (e.g. Levothyroxine 125mcg)" value={formData.medications} onChange={e => setFormData({...formData, medications: e.target.value})} />
+                    <input placeholder="LDL Level (mg/dL)" type="number" value={formData.ldlLevel} onChange={e => setFormData({...formData, ldlLevel: e.target.value})} />
+                    <input placeholder="Glucose (mg/dL)" type="number" value={formData.glucoseLevel} onChange={e => setFormData({...formData, glucoseLevel: e.target.value})} />
                 </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', opacity: 0.6 }}>These values allow the AI Chef to tailor suggestions for heart health and thyroid medication timing.</p>
+                <div className="grid grid-cols-2">
+                    <input placeholder="Blood Pressure (e.g. 120/80)" value={formData.bloodPressure} onChange={e => setFormData({...formData, bloodPressure: e.target.value})} />
+                    <input placeholder="Medications (e.g. Metformin 500mg)" value={formData.medications} onChange={e => setFormData({...formData, medications: e.target.value})} />
+                </div>
+                <input placeholder="Other Health Conditions (e.g. Prediabetes, Iron Deficiency, etc.)" value={formData.healthConditions} onChange={e => setFormData({...formData, healthConditions: e.target.value})} style={{ marginTop: '0.75rem' }} />
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', opacity: 0.6 }}>Our AI analyzes these markers to optimize your diet for heart health, blood sugar, and nutrient deficiencies.</p>
             </div>
 
             <button type="submit" className="btn-primary" disabled={isLoading}>{isLoading ? 'Building Elite Profile...' : 'Save & Initialize Database'}</button>

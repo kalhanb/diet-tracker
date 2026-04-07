@@ -19,8 +19,11 @@ interface User {
   goalType: string;
   targetWeight: number;
   dailyCalories: number;
-  ldlLevel?: number;
-  medications?: string;
+  ldlLevel      ?: number;
+  glucoseLevel  ?: number;
+  bloodPressure ?: string;
+  medications   ?: string;
+  healthConditions ?: string;
 }
 
 interface PantryItem {
@@ -86,7 +89,10 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [profileFormData, setProfileFormData] = useState({
       ...user,
       ldlLevel: user.ldlLevel?.toString() || '',
-      medications: user.medications || ''
+      glucoseLevel: user.glucoseLevel?.toString() || '',
+      bloodPressure: user.bloodPressure || '',
+      medications: user.medications || '',
+      healthConditions: user.healthConditions || ''
   });
 
   const fetchLogs = useCallback(async () => {
@@ -541,10 +547,15 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               
               <div style={{ padding: '1.5rem', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '1rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                   <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldAlert size={18} /> Clinical Bio-Markers</h4>
-                  <div className="grid grid-cols-2">
+                  <div className="grid grid-cols-2" style={{ marginBottom: '0.5rem' }}>
                     <input placeholder="LDL Level" type="number" value={profileFormData.ldlLevel} onChange={e => setProfileFormData({ ...profileFormData, ldlLevel: e.target.value })} />
+                    <input placeholder="Glucose Level" type="number" value={profileFormData.glucoseLevel} onChange={e => setProfileFormData({ ...profileFormData, glucoseLevel: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2" style={{ marginBottom: '0.5rem' }}>
+                    <input placeholder="Blood Pressure" value={profileFormData.bloodPressure} onChange={e => setProfileFormData({ ...profileFormData, bloodPressure: e.target.value })} />
                     <input placeholder="Medications" value={profileFormData.medications} onChange={e => setProfileFormData({ ...profileFormData, medications: e.target.value })} />
                   </div>
+                  <input placeholder="Other Conditions" value={profileFormData.healthConditions} onChange={e => setProfileFormData({ ...profileFormData, healthConditions: e.target.value })} />
               </div>
 
               <button type="submit" className="btn-primary">Update Profile Targets</button>

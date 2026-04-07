@@ -32,17 +32,23 @@ export async function POST(request: Request) {
   const carbsToday = user.logs.reduce((sum: number, log: any) => sum + (log.carbs || 0), 0);
   const fatToday = user.logs.reduce((sum: number, log: any) => sum + (log.fat || 0), 0);
 
-  const medicalAnalysis = [];
-  if (user.ldlLevel && user.ldlLevel > 110) medicalAnalysis.push(` LDL CONTEXT: ${user.ldlLevel} mg/dL (Requires low saturated fat, high soluble fiber).`);
-  if (user.medications && user.medications.toLowerCase().includes('levothyroxine')) medicalAnalysis.push(" MEDICATION: On Levothyroxine. Needs 60-min morning fasting; careful with soy/raw cruciferous.");
+  const clinicalProfile = `
+    - LDL Level: ${user.ldlLevel || 'Not provided'} mg/dL
+    - Glucose Level: ${user.glucoseLevel || 'Not provided'} mg/dL
+    - Blood Pressure: ${user.bloodPressure || 'Not provided'}
+    - Medications: ${user.medications || 'None listed'}
+    - Health Conditions: ${user.healthConditions || 'None listed'}
+  `;
   
   const currentPantry = user.pantry.map(i => i.name).join(', ') || "Kirkland Chicken, Eggs, Shrimp, Salmon, Shrimps, Quinoa, Berries, etc.";
 
-  // System Instructions optimized for AI-Calculated Nutrition
-  const systemInstruction = `You are a world-class professional dietitian. ${user.name}, Age ${user.age}, Weight ${user.weight}kg, Height ${user.height}cm, Gender ${user.gender}. Goal: ${user.goalType}.
-    CURRENT STATUS FOR TODAY: Consumed ${caloriesToday} kcal, ${proteinToday}g Protein, ${carbsToday}g Carbs, ${fatToday}g Fat. Target: ${user.dailyCalories} kcal.
+  // System Instructions optimized for Clinical Autonomy
+  const systemInstruction = `You are a world-class professional clinical dietitian. ${user.name}, Age ${user.age}, Weight ${user.weight}kg, Height ${user.height}cm, Gender ${user.gender}. Goal: ${user.goalType}.
     
-    ${medicalAnalysis.join('\n    ')}
+    CLINICAL PROFILE:
+    ${clinicalProfile}
+
+    CURRENT STATUS FOR TODAY: Consumed ${caloriesToday} kcal, ${proteinToday}g Protein, ${carbsToday}g Carbs, ${fatToday}g Fat. Target: ${user.dailyCalories} kcal.
     
     PANTRY (The user has these items ONLY): ${currentPantry}.
 

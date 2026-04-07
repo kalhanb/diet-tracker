@@ -11,9 +11,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, medications } = body;
+  const { name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions } = body;
 
-  const bmr = calculateBMR(weight, height, age, gender);
+  const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
   const tdee = calculateTDEE(bmr, activityLevel);
   const dailyCalories = getRecommendedCalories(tdee, goalType);
 
@@ -29,7 +29,10 @@ export async function POST(request: Request) {
       targetWeight: parseFloat(targetWeight),
       dailyCalories,
       ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
+      glucoseLevel: glucoseLevel ? parseFloat(glucoseLevel) : null,
+      bloodPressure: bloodPressure || null,
       medications: medications || null,
+      healthConditions: healthConditions || null,
     },
   });
 
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     const body = await request.json();
-    const { id, name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, medications } = body;
+    const { id, name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions } = body;
 
     const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
     const tdee = calculateTDEE(bmr, activityLevel);
@@ -57,7 +60,10 @@ export async function PATCH(request: Request) {
             targetWeight: parseFloat(targetWeight),
             dailyCalories,
             ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
+            glucoseLevel: glucoseLevel ? parseFloat(glucoseLevel) : null,
+            bloodPressure: bloodPressure || null,
             medications: medications || null,
+            healthConditions: healthConditions || null,
         },
     });
 

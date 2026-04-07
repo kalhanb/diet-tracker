@@ -19,7 +19,10 @@ model User {
   targetWeight  Float
   dailyCalories Int
   ldlLevel      Float?      
+  glucoseLevel  Float?      
+  bloodPressure String?     
   medications   String?     
+  healthConditions String?  
   createdAt     DateTime    @default(now())
   logs          DietLog[]
   weightLogs    WeightLog[]
