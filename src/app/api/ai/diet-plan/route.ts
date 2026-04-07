@@ -64,7 +64,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ plan: text });
   } catch (error: any) {
     console.error('Gemini AI Error:', error);
+    
+    // Attempt a raw fetch to list models for debugging
+    let available = "Unknown";
+    try {
+        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        const listData = await listRes.json();
+        available = (listData.models || []).map((m: any) => m.name.replace('models/', '')).join(", ");
+    } catch (e) {}
+
     const errorMessage = error?.message || 'Failed to generate AI plan';
-    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}` }, { status: 500 });
+    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}. Available models for your key: ${available}` }, { status: 500 });
   }
 }
