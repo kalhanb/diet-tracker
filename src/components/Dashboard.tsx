@@ -86,10 +86,11 @@ export default function Dashboard({ user, onBack }: { user: User, onBack: () => 
         body: JSON.stringify({ userId: user.id }),
       });
       const data = await res.json();
-      if (data.plan) {
+      if (res.ok && data.plan) {
         setAiPlan(data.plan);
       } else {
-        setAiPlan("### ⚠️ Error\nCould not generate your AI plan. Please check your **GEMINI_API_KEY**.");
+        const errorMsg = data.error || "Please check your **GEMINI_API_KEY** and ensure your dev server has been restarted.";
+        setAiPlan(`### ⚠️ AI Error\n${errorMsg}`);
       }
     } catch (e) {
       console.error('AI error:', e);

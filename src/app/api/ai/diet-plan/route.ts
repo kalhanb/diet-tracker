@@ -5,6 +5,10 @@ import { prisma } from '@/lib/db';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'GEMINI_API_KEY is missing from environment variables.' }, { status: 500 });
+  }
+
   const { userId } = await request.json();
 
   if (!userId) {
