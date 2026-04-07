@@ -65,15 +65,17 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Gemini AI Error:', error);
     
-    // Attempt a raw fetch to list models for debugging
+    // Deep Scan for debugging
     let available = "Unknown";
+    let scanStatus = 0;
     try {
         const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        scanStatus = listRes.status;
         const listData = await listRes.json();
         available = (listData.models || []).map((m: any) => m.name.replace('models/', '')).join(", ");
     } catch (e) {}
 
     const errorMessage = error?.message || 'Failed to generate AI plan';
-    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}. Available models for your key: ${available}` }, { status: 500 });
+    return NextResponse.json({ error: `AI Diagnostic: ${errorMessage}. Scan Status: ${scanStatus}. Available models: ${available}` }, { status: 500 });
   }
 }
