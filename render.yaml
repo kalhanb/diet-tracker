@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: diet-tracker
+    runtime: node
+    plan: free
+    buildCommand: npm install && prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.1
+      - key: DATABASE_URL
+        sync: false
