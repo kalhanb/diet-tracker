@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the VERY end.`;
 
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.0-flash',
     systemInstruction: systemInstruction 
   });
 
