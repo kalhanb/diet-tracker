@@ -39,9 +39,21 @@ export async function POST(request: Request) {
         
         const mealData = JSON.parse(jsonMatch[0]);
 
-        const { coachingTip, ...dbData } = mealData;
+        // CLINICAL SANITIZATION
+        const sanitizedData = {
+            foodName: mealData.foodName || "Visually Identified Meal",
+            calories: Math.round(Number(mealData.calories) || 0),
+            protein:  Number(mealData.protein) || 0,
+            carbs:    Number(mealData.carbs) || 0,
+            fat:      Number(mealData.fat) || 0,
+            mealType: mealData.mealType || "Snack",
+            mood:     mealData.mood || "Neutral"
+        };
+
+        const coachingTip = mealData.coachingTip || "Excellent visual log tracked.";
+
         const savedLog = await prisma.dietLog.create({
-            data: { ...dbData, userId }
+            data: { ...sanitizedData, userId }
         });
 
         return NextResponse.json({ ...savedLog, coachingTip });

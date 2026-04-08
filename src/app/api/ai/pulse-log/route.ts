@@ -33,10 +33,22 @@ export async function POST(request: Request) {
         
         const mealData = JSON.parse(jsonMatch[0]);
 
-        // Save to DB (filter out coachingTip for DB save)
-        const { coachingTip, ...dbData } = mealData;
+        // CLINICAL SANITIZATION: Force numbers and handle missing fields
+        const sanitizedData = {
+            foodName: mealData.foodName || "Unknown Elite Meal",
+            calories: Math.round(Number(mealData.calories) || 0),
+            protein:  Number(mealData.protein) || 0,
+            carbs:    Number(mealData.carbs) || 0,
+            fat:      Number(mealData.fat) || 0,
+            mealType: mealData.mealType || "Snack",
+            mood:     mealData.mood || "Neutral"
+        };
+
+        const coachingTip = mealData.coachingTip || "Continue prioritizing your clinical goals.";
+
+        // Save to DB
         const savedLog = await prisma.dietLog.create({
-            data: { ...dbData, userId }
+            data: { ...sanitizedData, userId }
         });
 
         return NextResponse.json({ ...savedLog, coachingTip });
