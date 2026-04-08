@@ -28,3 +28,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json(savedPlan);
 }
+
+export async function PATCH(request: Request) {
+    const body = await request.json();
+    const { id, isFavorite } = body;
+
+    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+    const updated = await prisma.dietPlanArchive.update({
+        where: { id },
+        data: { isFavorite }
+    });
+
+    return NextResponse.json(updated);
+}

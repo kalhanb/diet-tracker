@@ -56,6 +56,7 @@ model DietPlanArchive {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   planText  String   @db.Text
+  isFavorite Boolean  @default(false)
   date      DateTime @default(now())
 }
 

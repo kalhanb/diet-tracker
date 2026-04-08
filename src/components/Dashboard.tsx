@@ -69,6 +69,7 @@ interface LoggableMeal {
 interface DietPlanArchive {
     id: string;
     planText: string;
+    isFavorite: boolean;
     date: string;
 }
 
@@ -329,6 +330,15 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     } finally {
       setIsAiLoading(false);
     }
+  };
+
+  const toggleFavoritePlan = async (id: string, current: boolean) => {
+      await fetch('/api/ai/history', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, isFavorite: !current })
+      });
+      fetchPlanHistory();
   };
 
   const logAiSuggestion = async (msgIndex: number) => {
@@ -621,6 +631,29 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                   </div>
               ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* Elite Templates Library */}
+                    <div className="templates-library">
+                        <h3 style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>Elite Philosophy Library</h3>
+                        <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
+                            {[
+                                { name: 'Mediterranean', desc: 'Healthy fats & greens. (Clinical Gold Standard)', prompt: 'Create a Mediterranean diet plan focusing on olive oil, fresh veggies, and lean fish.' },
+                                { name: 'Keto Protocol', desc: 'High-fat, low-carb metabolic shift.', prompt: 'Create a strict Keto diet plan for metabolic optimization.' },
+                                { name: 'DASH Clinical', desc: 'Low sodium, heart-healthy grains.', prompt: 'Create a DASH diet plan focused on reducing sodium and blood pressure.' },
+                                { name: 'Muscle Fuel', desc: 'High protein for performance & growth.', prompt: 'Create a high-protein bulk diet plan for muscle hypertrophy.' }
+                            ].map((diet, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => { setChatInput(diet.prompt); sendChatMessage(diet.prompt); }}
+                                    className="glass-card" 
+                                    style={{ minWidth: '220px', padding: '1rem', textAlign: 'left', cursor: 'grab' }}
+                                >
+                                    <h4 style={{ color: 'var(--primary)', marginBottom: '0.25rem' }}>{diet.name}</h4>
+                                    <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>{diet.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <section className="glass-card ai-coach-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
                         <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
                             <div className="ai-controls" style={{ display: 'flex', gap: '0.5rem' }}>
@@ -671,10 +704,14 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                         </h3>
                         <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
                             {planHistory.map((plan, i) => (
-                                <div key={i} className="glass-card" style={{ padding: '1rem', fontSize: '0.85rem' }}>
+                                <div key={i} className={`glass-card ${plan.isFavorite ? 'favorite-plan' : ''}`} style={{ padding: '1rem', fontSize: '0.85rem', position: 'relative', border: plan.isFavorite ? '1px solid var(--primary)' : '1px solid transparent' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: 0.6 }}>
                                         <span>{new Date(plan.date).toLocaleDateString()}</span>
-                                        <Sparkles size={14} />
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button onClick={() => toggleFavoritePlan(plan.id, plan.isFavorite)} style={{ color: plan.isFavorite ? 'var(--primary)' : 'inherit' }}>
+                                                <Sparkles size={14} fill={plan.isFavorite ? 'currentColor' : 'none'} />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div style={{ maxHeight: '150px', overflowY: 'auto', borderLeft: '2px solid var(--primary)', paddingLeft: '0.75rem' }}>
                                         {renderMarkdown(plan.planText.substring(0, 300) + '...')}
