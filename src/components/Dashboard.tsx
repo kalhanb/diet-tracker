@@ -6,7 +6,7 @@ import { Line, Radar } from 'react-chartjs-2';
 import { 
   LayoutDashboard, TrendingUp, Sparkles, ShoppingBag, Plus, Scale, Settings, 
   UserCircle, Trash2, Edit2, CheckCircle2, Send, ShieldAlert, Maximize2, 
-  Minimize2, Sun, Moon, Lock, Zap, Droplets 
+  Minimize2, Sun, Moon, Lock, Zap, Droplets, Camera, ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
@@ -113,6 +113,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [loggingStatus, setLoggingStatus] = useState<string | null>(null);
   const [pulseInput, setPulseInput] = useState('');
   const [isPulseLoading, setIsPulseLoading] = useState(false);
+  const [isVisionLoading, setIsVisionLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
@@ -298,6 +300,40 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
           }
       } catch (e) {}
       finally { setIsPulseLoading(false); }
+  };
+
+  const handleVisionLog = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsVisionLoading(true);
+      setLoggingStatus('Scanning Plate Structure... 📸');
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+          const base64 = (reader.result as string).split(',')[1];
+          try {
+              const res = await fetch('/api/ai/vision-log', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ image: base64, userId: user.id }),
+              });
+              if (res.ok) {
+                  setLoggingStatus('Visual Intel Acquired! 🧬');
+                  fetchLogs();
+                  setTimeout(() => setLoggingStatus(null), 3000);
+              } else {
+                  setLoggingStatus('Vision Error: Check Subject ⚠️');
+                  setTimeout(() => setLoggingStatus(null), 3000);
+              }
+          } catch (e) {
+              setLoggingStatus('Clinical Interruption ⚠️');
+              setTimeout(() => setLoggingStatus(null), 3000);
+          } finally {
+              setIsVisionLoading(false);
+          }
+      };
   };
 
   const handleAddPantry = async (e: React.FormEvent) => {
@@ -581,7 +617,23 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                                 onChange={e => setPulseInput(e.target.value)}
                                 style={{ background: 'var(--surface-raised)', border: 'none', flex: 1 }}
                             />
-                            <button className="btn-primary" disabled={isPulseLoading}>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                ref={fileInputRef} 
+                                onChange={handleVisionLog} 
+                                style={{ display: 'none' }} 
+                            />
+                            <button 
+                                type="button" 
+                                className="btn-secondary" 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isVisionLoading}
+                                style={{ padding: '0.5rem' }}
+                            >
+                                <Camera size={18} color={isVisionLoading ? 'var(--primary)' : 'inherit'} />
+                            </button>
+                            <button className="btn-primary" disabled={isPulseLoading || isVisionLoading}>
                                 {isPulseLoading ? '...' : <Send size={18} />}
                             </button>
                         </form>
