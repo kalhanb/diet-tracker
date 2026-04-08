@@ -1,19 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, RadialLinearScale } from 'chart.js';
+import { Line, Radar } from 'react-chartjs-2';
 import { 
   LayoutDashboard, TrendingUp, Sparkles, ShoppingBag, Plus, Scale, Settings, 
   UserCircle, Trash2, Edit2, CheckCircle2, Send, ShieldAlert, Maximize2, 
-  Minimize2, Sun, Moon, Lock, Zap 
+  Minimize2, Sun, Moon, Lock, Zap, Droplets 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
 import { Pricing } from './Pricing';
 import { MedicalDisclaimer } from './MedicalDisclaimer';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, RadialLinearScale);
 
 interface User {
   id: string;
@@ -69,6 +69,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [user, setUser] = useState<User>(initialUser);
   const [logs, setLogs] = useState<DietLog[]>([]);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
+  const [waterAmount, setWaterAmount] = useState(0);
   const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLogForm, setShowLogForm] = useState(false);
@@ -184,6 +185,28 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       return;
     }
     setActiveTab(tabId);
+  };
+
+  const handleAddWater = async (amount: number) => {
+    const res = await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+          foodName: 'Water Hydration', 
+          calories: 0, 
+          protein: 0, 
+          carbs: 0, 
+          fat: 0, 
+          mealType: 'Snack', 
+          userId: user.id 
+      }),
+    });
+
+    if (res.ok) {
+      setWaterAmount(prev => prev + amount);
+      setLoggingStatus('Liquid Fuel Online! 💧');
+      setTimeout(() => setLoggingStatus(null), 3000);
+    }
   };
 
   const handleAddLog = async (e: React.FormEvent) => {
@@ -441,34 +464,81 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
           {activeTab === 'dashboard' && (
             <motion.div key="stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid">
               <div className="grid grid-cols-2">
-                <div className="glass-card main-stat">
-                    <div className="stat-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <h3>Fuel Status</h3>
-                        <span className="value" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{caloriesConsumed} / {user.dailyCalories}</span>
+                {/* Fuel & Hydration */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="glass-card main-stat">
+                        <div className="stat-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                            <h3>Fuel Status</h3>
+                            <span className="value" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{caloriesConsumed} / {user.dailyCalories}</span>
+                        </div>
+                        <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1rem' }}>
+                            <div className="progress-bar" style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary)' }}></div>
+                        </div>
+                        <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setEditingLog(null); setShowLogForm(true); }}>
+                            <Plus size={18} /> Log Fuel
+                        </button>
                     </div>
-                    <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1rem' }}>
-                        <div className="progress-bar" style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary)' }}></div>
+
+                    <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>Hydration Lab</h3>
+                            <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>{waterAmount} <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>ml</span></p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn-secondary" style={{ padding: '0.75rem', borderRadius: '50%', color: 'var(--accent)' }} onClick={() => handleAddWater(250)}>
+                                <Droplets size={20} />
+                            </button>
+                        </div>
                     </div>
-                    <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setEditingLog(null); setShowLogForm(true); }}>
-                        <Plus size={18} /> Log Fuel
-                    </button>
                 </div>
-                <div className="glass-card activity-log">
-                    <h3 style={{ marginBottom: '1rem' }}>Daily Feed</h3>
-                    <div className="log-items" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {logs.length === 0 ? <p style={{ opacity: 0.5, textAlign: 'center' }}>No logs today.</p> : logs.map(log => (
-                            <div key={log.id} className="log-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{log.foodName}</h4>
-                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{log.calories} kcal • {log.mealType}</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={14} /></button>
-                                    <button onClick={() => { if(confirm('Delete?')) fetch(`/api/logs?id=${log.id}`, {method: 'DELETE'}).then(() => fetchLogs())}} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
-                                </div>
-                            </div>
-                        ))}
+
+                {/* Radar Chart & Micronutrients */}
+                <div className="glass-card" style={{ minHeight: '300px' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Clinical Balance</h3>
+                    <div style={{ height: '220px', display: 'flex', justifyContent: 'center' }}>
+                        <Radar 
+                            data={{
+                                labels: ['Vitamin C', 'Iron', 'Calcium', 'Protein', 'Fiber', 'Vitamin D'],
+                                datasets: [{
+                                    label: 'Daily Balance',
+                                    data: [80, 45, 60, 90, 30, 20],
+                                    backgroundColor: 'rgba(192, 132, 252, 0.2)',
+                                    borderColor: 'var(--accent)',
+                                    pointBackgroundColor: 'var(--accent)',
+                                }]
+                            }}
+                            options={{
+                                scales: {
+                                    r: {
+                                        angleLines: { color: 'rgba(255,255,255,0.1)' },
+                                        grid: { color: 'rgba(255,255,255,0.1)' },
+                                        pointLabels: { color: 'var(--text-secondary)', font: { size: 10 } },
+                                        ticks: { display: false }
+                                    }
+                                },
+                                plugins: { legend: { display: false } }
+                            }}
+                        />
                     </div>
+                </div>
+              </div>
+
+              {/* Daily Feed */}
+              <div className="glass-card activity-log" style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ marginBottom: '1rem' }}>Daily Feed</h3>
+                <div className="log-items" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {logs.length === 0 ? <p style={{ opacity: 0.5, textAlign: 'center' }}>No logs today.</p> : logs.map(log => (
+                    <div key={log.id} className="log-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{log.foodName}</h4>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{log.calories} kcal • {log.mealType}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={14} /></button>
+                        <button onClick={() => { if(confirm('Delete?')) fetch(`/api/logs?id=${log.id}`, {method: 'DELETE'}).then(() => fetchLogs())}} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>

@@ -30,6 +30,7 @@ model User {
   updatedAt            DateTime    @updatedAt
   logs                 DietLog[]
   weightLogs           WeightLog[]
+  waterLogs            WaterLog[]
   pantry               PantryItem[]
   
   // Clinical markers
@@ -38,6 +39,14 @@ model User {
   bloodPressure        String?
   medications          String?
   healthConditions     String?
+}
+
+model WaterLog {
+  id        String   @id @default(cuid())
+  amount    Int      // in ml
+  date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model DietLog {
