@@ -650,7 +650,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                         <div style={{ padding: '0.75rem', borderRadius: '0.75rem', background: 'rgba(192, 132, 252, 0.05)', borderLeft: '3px solid var(--accent)', fontSize: '0.8rem' }}>
                             <strong>Proactive Guidance:</strong> {caloriesRemaining > 1000 ? "You have significant fuel remaining. Prioritize Lean Protein for dinner." : "Fuel near target. Suggest a light, fibrous snack before fasting."}
                         </div>
-                    </div>
                         <div className="macros-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '0.75rem' }}>
                                 <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>PRO</div>
