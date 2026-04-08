@@ -324,6 +324,11 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       setLoggingStatus('Scanning Plate Structure... 📸');
 
       const reader = new FileReader();
+      reader.onerror = () => {
+          setIsVisionLoading(false);
+          setLoggingStatus('Image Capture Failed ⚠️');
+          setTimeout(() => setLoggingStatus(null), 3000);
+      };
       reader.readAsDataURL(file);
       reader.onload = async () => {
           const base64 = (reader.result as string).split(',')[1];
@@ -557,6 +562,27 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
 
   return (
     <div className={`dashboard-container premium-container ${theme === 'light' ? 'light-mode' : ''}`}>
+      {/* Global Clinical Status Banner */}
+      <AnimatePresence>
+        {loggingStatus && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="status-banner"
+            style={{ 
+              position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)',
+              zIndex: 9999, background: 'var(--primary)', color: 'white',
+              padding: '0.75rem 1.5rem', borderRadius: '2rem', fontSize: '0.85rem',
+              fontWeight: 'bold', boxShadow: '0 10px 30px rgba(192, 132, 252, 0.4)',
+              display: 'flex', alignItems: 'center', gap: '0.75rem'
+            }}
+          >
+            <Sparkles size={16} /> {loggingStatus}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Header Section */}
       <header className="main-header glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
