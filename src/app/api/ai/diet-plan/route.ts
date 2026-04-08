@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     CURRENT STATUS: ${caloriesToday} kcal today. Target: ${user.dailyCalories} kcal.
     PANTRY: ${currentPantry}.
     FORMATTING RULES: 1. USE MARKDOWN TABLES. 2. USE BOLD HEADINGS. 3. BE CONCISE.
-    IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> at the very end.`;
+    IMPORTANT: Append <MEALS_JSON>[{"name": "...", "calories": 400, "protein": 30, "carbs": 20, "fat": 10, "mealType": "Lunch"}]</MEALS_JSON> and <SHOPPING_LIST_JSON>[{"item": "...", "amount": "...", "category": "..."}]</SHOPPING_LIST_JSON> at the very end.`;
 
   const lastMessage = messages[messages.length - 1].parts[0].text;
 

@@ -66,6 +66,12 @@ interface LoggableMeal {
     mealType: string;
 }
 
+interface ShoppingListItem {
+    item: string;
+    amount: string;
+    category: string;
+}
+
 interface DietPlanArchive {
     id: string;
     planText: string;
@@ -99,6 +105,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
   const [parsedMeals, setParsedMeals] = useState<Record<number, LoggableMeal[]>>({});
+  const [parsedShoppingLists, setParsedShoppingLists] = useState<Record<number, ShoppingListItem[]>>({});
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [loggingStatus, setLoggingStatus] = useState<string | null>(null);
@@ -304,12 +311,20 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       if (data.reply) {
         const fullContent = data.reply;
         const mealMatch = fullContent.match(/<MEALS_JSON>([\s\S]*?)<\/MEALS_JSON>/);
-        const cleanContent = fullContent.replace(/<MEALS_JSON>[\s\S]*?<\/MEALS_JSON>/, '').trim();
+        const shopMatch = fullContent.match(/<SHOPPING_LIST_JSON>([\s\S]*?)<\/SHOPPING_LIST_JSON>/);
+        const cleanContent = fullContent.replace(/<MEALS_JSON>[\s\S]*?<\/MEALS_JSON>/, '').replace(/<SHOPPING_LIST_JSON>[\s\S]*?<\/SHOPPING_LIST_JSON>/, '').trim();
         
         if (mealMatch) {
             try {
                 const meals = JSON.parse(mealMatch[1]);
                 setParsedMeals(prev => ({ ...prev, [updatedHistory.length]: meals }));
+            } catch (err) {}
+        }
+
+        if (shopMatch) {
+            try {
+                const items = JSON.parse(shopMatch[1]);
+                setParsedShoppingLists(prev => ({ ...prev, [updatedHistory.length]: items }));
             } catch (err) {}
         }
         
@@ -681,6 +696,24 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                                                     <button onClick={() => logAiSuggestion(i)} className="btn-primary" style={{ marginTop: '1rem', fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
                                                         <Plus size={14} /> Log this Day
                                                     </button>
+                                                )}
+
+                                                {/* Clinical Shopping List */}
+                                                {parsedShoppingLists[i] && (
+                                                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <ShoppingBag size={16} /> Clinical Commissary
+                                                        </h4>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                            {parsedShoppingLists[i].map((item, j) => (
+                                                                <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem' }}>
+                                                                    <input type="checkbox" style={{ cursor: 'pointer' }} />
+                                                                    <span style={{ opacity: 0.9 }}>{item.item}</span>
+                                                                    <span style={{ opacity: 0.5, fontSize: '0.7rem' }}>— {item.amount} ({item.category})</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                         ) : msg.parts[0].text}
