@@ -33,6 +33,7 @@ interface User {
   bloodPressure ?: string;
   medications   ?: string;
   healthConditions ?: string;
+  streak: number;
 }
 
 interface PantryItem {
@@ -48,6 +49,7 @@ interface DietLog {
   carbs: number;
   fat: number;
   mealType: string;
+  mood?: string;
   date: string;
 }
 
@@ -109,6 +111,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [loggingStatus, setLoggingStatus] = useState<string | null>(null);
+  const [pulseInput, setPulseInput] = useState('');
+  const [isPulseLoading, setIsPulseLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
@@ -274,6 +278,26 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       fetchWeightLogs();
       setShowWeightForm(false);
     }
+  };
+
+  const handlePulseLog = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!pulseInput.trim()) return;
+      setIsPulseLoading(true);
+      try {
+          const res = await fetch('/api/ai/pulse-log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: pulseInput, userId: user.id }),
+          });
+          if (res.ok) {
+              setPulseInput('');
+              setLoggingStatus('Insight Synchronized! 🧬');
+              fetchLogs();
+              setTimeout(() => setLoggingStatus(null), 3000);
+          }
+      } catch (e) {}
+      finally { setIsPulseLoading(false); }
   };
 
   const handleAddPantry = async (e: React.FormEvent) => {
@@ -486,7 +510,12 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
             </div>
             <div>
               <h1 style={{ fontSize: '1.25rem' }}>Master {user.name}</h1>
-              <p className="status-badge" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Phase: {user.goalType === 'Weight Loss' ? 'Cutting' : user.goalType === 'Muscle Gain' ? 'Bulking' : 'Performance'}</p>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <p className="status-badge" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{user.goalType}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f59e0b', fontSize: '0.9rem', fontWeight: 800 }}>
+                    <Zap size={14} fill="currentColor" /> {user.streak || 0} DAY STREAK
+                </div>
+              </div>
             </div>
           </div>
           <div className="header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -544,13 +573,32 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 {/* Fuel & Hydration */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div className="glass-card main-stat">
+                        <h3 style={{ marginBottom: '1rem' }}>Zero-Friction Pulse 🎙️</h3>
+                        <form onSubmit={handlePulseLog} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                            <input 
+                                placeholder="I just had a bowl of oats and berries..." 
+                                value={pulseInput} 
+                                onChange={e => setPulseInput(e.target.value)}
+                                style={{ background: 'var(--surface-raised)', border: 'none', flex: 1 }}
+                            />
+                            <button className="btn-primary" disabled={isPulseLoading}>
+                                {isPulseLoading ? '...' : <Send size={18} />}
+                            </button>
+                        </form>
+                        
                         <div className="stat-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <h3>Fuel Status</h3>
+                            <h3>Daily Fuel Target</h3>
                             <span className="value" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{caloriesConsumed} / {user.dailyCalories}</span>
                         </div>
                         <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1.5rem' }}>
                             <div className="progress-bar" style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary)' }}></div>
                         </div>
+
+                        {/* Adaptive Advice */}
+                        <div style={{ padding: '0.75rem', borderRadius: '0.75rem', background: 'rgba(192, 132, 252, 0.05)', borderLeft: '3px solid var(--accent)', fontSize: '0.8rem' }}>
+                            <strong>Proactive Guidance:</strong> {caloriesRemaining > 1000 ? "You have significant fuel remaining. Prioritize Lean Protein for dinner." : "Fuel near target. Suggest a light, fibrous snack before fasting."}
+                        </div>
+                    </div>
                         <div className="macros-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '0.75rem' }}>
                                 <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>PRO</div>
@@ -637,7 +685,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                     <div key={log.id} className="log-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
                       <div>
                         <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{log.foodName}</h4>
-                        <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{log.calories} kcal • {log.mealType}</span>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{log.calories} kcal • {log.mealType} {log.mood && `• Feeling: ${log.mood}`}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={14} /></button>

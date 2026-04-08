@@ -20,6 +20,8 @@ model User {
   dailyCalories        Int
   dailyWaterGoal       Int         @default(2000)
   targetWeight         Float
+  streak               Int         @default(0)
+  lastLogDate          DateTime?
   
   // Subscription Fields
   subscriptionStatus   String      @default("free") // "free", "active", "canceled"
@@ -71,6 +73,7 @@ model DietLog {
   carbs     Float
   fat       Float
   mealType  String   
+  mood      String?  // Energetic, Bloated, Tired, Neutral
 }
 
 model WeightLog {
