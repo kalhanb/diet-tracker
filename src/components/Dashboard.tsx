@@ -3,9 +3,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LayoutDashboard, TrendingUp, Sparkles, ShoppingBag, Plus, Scale, Settings, UserCircle, PlusCircle, Trash2, Edit2, ArrowLeft, CheckCircle2, Send, ShieldAlert, Maximize2, Minimize2, Sun, Moon, ShieldCheck } from 'lucide-react';
+import { 
+  LayoutDashboard, TrendingUp, Sparkles, ShoppingBag, Plus, Scale, Settings, 
+  UserCircle, Trash2, Edit2, CheckCircle2, Send, ShieldAlert, Maximize2, 
+  Minimize2, Sun, Moon, Lock, Zap 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
+import { Pricing } from './Pricing';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -20,8 +25,9 @@ interface User {
   goalType: string;
   targetWeight: number;
   dailyCalories: number;
-  ldlLevel      ?: number;
-  glucoseLevel  ?: number;
+  subscriptionStatus?: string;
+  ldlLevel      ?: string;
+  glucoseLevel  ?: string;
   bloodPressure ?: string;
   medications   ?: string;
   healthConditions ?: string;
@@ -74,12 +80,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [activeConfig, setActiveConfig] = useState({ activeProvider: 'gemini', activeModel: 'gemini-1.5-flash-latest' });
   const [availableModels, setAvailableModels] = useState<{provider: string, id: string, name: string}[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.body.classList.toggle('light-mode', newTheme === 'light');
-  };
+  const [showPricing, setShowPricing] = useState(false);
+  const [isElite, setIsElite] = useState(initialUser.subscriptionStatus === 'active');
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -101,8 +103,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
 
   const [profileFormData, setProfileFormData] = useState({
       ...user,
-      ldlLevel: user.ldlLevel?.toString() || '',
-      glucoseLevel: user.glucoseLevel?.toString() || '',
+      ldlLevel: user.ldlLevel || '',
+      glucoseLevel: user.glucoseLevel || '',
       bloodPressure: user.bloodPressure || '',
       medications: user.medications || '',
       healthConditions: user.healthConditions || ''
@@ -130,14 +132,13 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     fetchLogs();
     fetchWeightLogs();
     fetchPantry();
+    
     const fetchConfig = async () => {
         try {
             const res = await fetch('/api/admin/config');
             const data = await res.json();
             setActiveConfig(data);
-        } catch (error) {
-            console.error('Failed to fetch config');
-        }
+        } catch (error) {}
     };
 
     const fetchModels = async () => {
@@ -145,9 +146,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
             const res = await fetch('/api/admin/models');
             const data = await res.json();
             if (data.models) setAvailableModels(data.models);
-        } catch (error) {
-            console.error('Failed to fetch models');
-        }
+        } catch (error) {}
     };
 
     fetchConfig();
@@ -159,6 +158,26 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.body.classList.toggle('light-mode', newTheme === 'light');
+  };
+
+  const handleUpgrade = async (plan: string) => {
+    setIsElite(true);
+    setShowPricing(false);
+    alert(`Welcome to the Elite Clinical Tier! Your premium features are now unlocked.`);
+  };
+
+  const handleTabChange = (tabId: string) => {
+    if ((tabId === 'diet-plans' || tabId === 'pantry') && !isElite) {
+      setShowPricing(true);
+      return;
+    }
+    setActiveTab(tabId);
+  };
 
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,32 +191,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       setShowLogForm(false);
       setFormData({ foodName: '', calories: '', protein: '', carbs: '', fat: '', mealType: 'Breakfast' });
     }
-  };
-
-  const handleEditLog = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!editingLog) return;
-      
-      const res = await fetch('/api/logs', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editingLog),
-      });
-      
-      if (res.ok) {
-          fetchLogs();
-          setShowEditLogForm(false);
-          setEditingLog(null);
-      }
-  };
-
-  const handleDeleteLog = async (id: string) => {
-      if (!confirm('Are you sure you want to delete this log?')) return;
-      
-      const res = await fetch(`/api/logs?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-          fetchLogs();
-      }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -314,14 +307,10 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         });
         const data = await res.json();
         setActiveConfig(data);
-        alert(`AI Engine switched to ${provider} (${model})`);
-    } catch (error) {
-        alert('Failed to update AI configuration');
-    }
+    } catch (error) {}
   };
 
   const renderMarkdown = (text: string) => {
-    // Simple table parser
     const parts = text.split(/((\|.*\|\n)+)/);
     return parts.map((part, i) => {
       if (part.match(/\|.*\|/)) {
@@ -350,7 +339,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         );
       }
       
-      // Headers
       const lines = part.split('\n');
       return lines.map((line, j) => {
           if (line.startsWith('## ')) return <h2 key={`${i}-${j}`} style={{ color: 'var(--primary)', marginBottom: '0.75rem' }}>{line.replace('## ', '')}</h2>;
@@ -392,7 +380,12 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               <p className="status-badge" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Phase: {user.goalType === 'Weight Loss' ? 'Cutting' : user.goalType === 'Muscle Gain' ? 'Bulking' : 'Performance'}</p>
             </div>
           </div>
-          <div className="header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+             {!isElite && (
+                 <button className="btn-primary" style={{ padding: '0.5rem 1rem', background: 'var(--secondary)' }} onClick={() => setShowPricing(true)}>
+                    <Zap size={16} /> GO ELITE
+                 </button>
+             )}
              <button className="btn-secondary" style={{ padding: '0.5rem' }} onClick={toggleTheme}>
                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
              </button>
@@ -416,14 +409,18 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 <button
                     key={tab.id}
                     className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => handleTabChange(tab.id)}
                     style={{
                         display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem',
                         borderRadius: '0.75rem', fontWeight: 600, color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        background: activeTab === tab.id ? 'var(--surface-raised)' : 'transparent', transition: '0.3s'
+                        background: activeTab === tab.id ? 'var(--surface-raised)' : 'transparent', transition: '0.3s',
+                        position: 'relative'
                     }}
                 >
                     {tab.icon} <span>{tab.label}</span>
+                    {(tab.id === 'diet-plans' || tab.id === 'pantry') && !isElite && (
+                        <Lock size={12} style={{ marginLeft: '4px', opacity: 0.5 }} />
+                    )}
                 </button>
             ))}
         </div>
@@ -450,7 +447,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 <div className="glass-card activity-log">
                     <h3 style={{ marginBottom: '1rem' }}>Daily Feed</h3>
                     <div className="log-items" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {logs.map(log => (
+                        {logs.length === 0 ? <p style={{ opacity: 0.5, textAlign: 'center' }}>No logs today.</p> : logs.map(log => (
                             <div key={log.id} className="log-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
                                 <div>
                                     <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{log.foodName}</h4>
@@ -458,7 +455,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={14} /></button>
-                                    <button onClick={() => handleDeleteLog(log.id)} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
+                                    <button onClick={() => { if(confirm('Delete?')) fetch(`/api/logs?id=${log.id}`, {method: 'DELETE'}).then(() => fetchLogs())}} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
                                 </div>
                             </div>
                         ))}
@@ -484,20 +481,17 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               <section className="glass-card ai-coach-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
                 <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
                     <div className="ai-controls" style={{ display: 'flex', gap: '0.5rem' }}>
-                        <select className="pill-select" value={activeConfig.activeProvider} onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)} style={{ width: 'auto' }}>
+                        <select value={activeConfig.activeProvider} onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 'bold' }}>
                             <option value="gemini">Gemini</option>
                             <option value="openai">OpenAI</option>
                             <option value="anthropic">Claude</option>
                         </select>
-                        <select className="pill-select" value={activeConfig.activeModel} onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)} style={{ width: 'auto' }}>
+                        <select value={activeConfig.activeModel} onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>
                             {availableModels.filter(m => m.provider === activeConfig.activeProvider).map(m => (
                                 <option key={m.id} value={m.id}>{m.name}</option>
                             ))}
                         </select>
                     </div>
-                    <button className="btn-secondary" style={{ padding: '0.4rem' }} onClick={() => setIsAiExpanded(!isAiExpanded)}>
-                        {isAiExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                    </button>
                 </div>
 
                 <div ref={scrollRef} className="chat-history" style={{ flex: 1, overflowY: 'auto' }}>
@@ -508,7 +502,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                             </div>
                         </div>
                     ))}
-                    {isAiLoading && <div className="loader-dots">Coach is analyzing...</div>}
                 </div>
 
                 <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
@@ -538,7 +531,12 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         </AnimatePresence>
       </main>
 
-      {/* Global Modals remain at the end */}
+      {/* Pricing Modal */}
+      {showPricing && (
+          <Pricing onUpgrade={handleUpgrade} onClose={() => setShowPricing(false)} />
+      )}
+
+      {/* Global Modals */}
       {showLogForm && (
         <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="glass-card modal" style={{ width: '90%', maxWidth: '400px' }}>
@@ -564,6 +562,19 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
             </form>
           </div>
         </div>
+      )}
+
+      {showPantryForm && (
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="glass-card modal" style={{ width: '90%', maxWidth: '400px' }}>
+                <h2>Add Pantry Item</h2>
+                <form onSubmit={handleAddPantry} className="grid" style={{ marginTop: '1rem' }}>
+                <input placeholder="Item name" value={pantryItemName} onChange={e => setPantryItemName(e.target.value)} required />
+                <button type="submit" className="btn-primary">Add Item</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowPantryForm(false)}>Cancel</button>
+                </form>
+            </div>
+          </div>
       )}
     </div>
   );

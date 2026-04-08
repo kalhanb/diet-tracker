@@ -8,25 +8,36 @@ datasource db {
 }
 
 model User {
-  id            String      @id @default(uuid())
-  name          String
-  age           Int
-  gender        String      
-  weight        Float       
-  height        Float       
-  activityLevel String      
-  goalType      String      
-  targetWeight  Float
-  dailyCalories Int
-  ldlLevel      Float?      
-  glucoseLevel  Float?      
-  bloodPressure String?     
-  medications   String?     
-  healthConditions String?  
-  createdAt     DateTime    @default(now())
-  logs          DietLog[]
-  weightLogs    WeightLog[]
-  pantry        PantryItem[]
+  id                   String      @id @default(cuid())
+  email                String      @unique
+  name                 String
+  age                  Int
+  gender               String
+  weight               Float
+  height               Float
+  activityLevel        String
+  goalType             String
+  dailyCalories        Int
+  targetWeight         Float
+  
+  // Subscription Fields
+  subscriptionStatus   String      @default("free") // "free", "active", "canceled"
+  subscriptionPlan     String?     // "basic", "premium", "elite"
+  stripeCustomerId     String?     @unique
+  stripeSubscriptionId String?     @unique
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  logs                 DietLog[]
+  weightLogs           WeightLog[]
+  pantry               PantryItem[]
+  
+  // Clinical markers
+  ldlLevel             String?
+  glucoseLevel         String?
+  bloodPressure        String?
+  medications          String?
+  healthConditions     String?
 }
 
 model DietLog {
