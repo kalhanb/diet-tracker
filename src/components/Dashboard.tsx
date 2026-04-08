@@ -121,6 +121,11 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     weight: user.weight
   });
 
+  const [trendsConfig, setTrendsConfig] = useState({
+      timeframe: '7' as '7' | '30' | '90' | 'all',
+      metric: 'weight' as 'weight' | 'calories' | 'water'
+  });
+
   const [profileFormData, setProfileFormData] = useState({
       ...user,
       ldlLevel: user.ldlLevel || '',
@@ -431,14 +436,39 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const caloriesRemaining = user.dailyCalories - caloriesConsumed;
   const progressPercent = Math.min((caloriesConsumed / user.dailyCalories) * 100, 100);
 
+  const getFilteredLogs = () => {
+      const now = new Date();
+      return logs.filter(l => {
+          if (trendsConfig.timeframe === 'all') return true;
+          const diff = (now.getTime() - new Date(l.date).getTime()) / (1000 * 60 * 60 * 24);
+          return diff <= parseInt(trendsConfig.timeframe);
+      });
+  };
+
+  const getFilteredWeight = () => {
+      const now = new Date();
+      return weightLogs.filter(w => {
+          if (trendsConfig.timeframe === 'all') return true;
+          const diff = (now.getTime() - new Date(w.date).getTime()) / (1000 * 60 * 60 * 24);
+          return diff <= parseInt(trendsConfig.timeframe);
+      });
+  };
+
   const chartData = {
-    labels: weightLogs.map((log: WeightLog) => new Date(log.date).toLocaleDateString()),
+    labels: trendsConfig.metric === 'weight' 
+        ? getFilteredWeight().map(w => new Date(w.date).toLocaleDateString())
+        : Array.from(new Set(getFilteredLogs().map(l => new Date(l.date).toLocaleDateString()))),
     datasets: [
       {
-        label: 'Weight (kg)',
-        data: weightLogs.map((log: WeightLog) => log.weight),
-        borderColor: '#2dd4bf',
-        backgroundColor: 'rgba(45, 212, 191, 0.2)',
+        label: trendsConfig.metric === 'weight' ? 'Weight (kg)' : trendsConfig.metric === 'calories' ? 'Calories (kcal)' : 'Hydration (ml)',
+        data: trendsConfig.metric === 'weight' 
+            ? getFilteredWeight().map(w => w.weight)
+            : Array.from(new Set(getFilteredLogs().map(l => new Date(l.date).toLocaleDateString()))).map(dateStr => {
+                const dayLogs = getFilteredLogs().filter(l => new Date(l.date).toLocaleDateString() === dateStr);
+                return dayLogs.reduce((sum, l) => sum + (trendsConfig.metric === 'calories' ? l.calories : 0), 0);
+            }),
+        borderColor: trendsConfig.metric === 'weight' ? '#2dd4bf' : trendsConfig.metric === 'calories' ? 'var(--primary)' : 'var(--accent)',
+        backgroundColor: trendsConfig.metric === 'weight' ? 'rgba(45, 212, 191, 0.2)' : trendsConfig.metric === 'calories' ? 'rgba(192, 132, 252, 0.2)' : 'rgba(192, 132, 252, 0.2)',
         fill: true,
         tension: 0.4,
       },
@@ -623,9 +653,44 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
           {activeTab === 'trends' && (
             <motion.div key="trends" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <div className="glass-card chart-card">
-                <h2>Progress Report</h2>
-                <div style={{ height: '300px' }}>
-                    <Line data={chartData} options={{ maintainAspectRatio: false }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h2>Advanced Analytics</h2>
+                    <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--surface-raised)', padding: '0.25rem', borderRadius: '0.5rem' }}>
+                        {(['7', '30', '90', 'all'] as const).map(t => (
+                            <button 
+                                key={t} 
+                                onClick={() => setTrendsConfig(prev => ({ ...prev, timeframe: t }))}
+                                style={{ 
+                                    padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '0.4rem',
+                                    background: trendsConfig.timeframe === t ? 'var(--primary)' : 'transparent',
+                                    color: trendsConfig.timeframe === t ? 'white' : 'inherit'
+                                }}
+                            >
+                                {t.toUpperCase()}{t !== 'all' ? 'D' : ''}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                    {(['weight', 'calories'] as const).map(m => (
+                        <button 
+                            key={m}
+                            onClick={() => setTrendsConfig(prev => ({ ...prev, metric: m }))}
+                            style={{ 
+                                flex: 1, padding: '0.75rem', borderRadius: '0.75rem',
+                                border: `1px solid ${trendsConfig.metric === m ? 'var(--primary)' : 'rgba(255,255,255,0.05)'}`,
+                                background: trendsConfig.metric === m ? 'rgba(192, 132, 252, 0.1)' : 'var(--surface-raised)',
+                                textTransform: 'capitalize', fontWeight: 'bold'
+                            }}
+                        >
+                            {m}
+                        </button>
+                    ))}
+                </div>
+
+                <div style={{ height: '350px' }}>
+                    <Line data={chartData} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: false } } }} />
                 </div>
               </div>
             </motion.div>
