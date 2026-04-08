@@ -66,12 +66,19 @@ interface LoggableMeal {
     mealType: string;
 }
 
+interface DietPlanArchive {
+    id: string;
+    planText: string;
+    date: string;
+}
+
 export default function Dashboard({ user: initialUser, onBack }: { user: User, onBack: () => void }) {
   const [user, setUser] = useState<User>(initialUser);
   const [logs, setLogs] = useState<DietLog[]>([]);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
   const [waterAmount, setWaterAmount] = useState(0);
   const [pantry, setPantry] = useState<PantryItem[]>([]);
+  const [planHistory, setPlanHistory] = useState<DietPlanArchive[]>([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLogForm, setShowLogForm] = useState(false);
   const [showEditLogForm, setShowEditLogForm] = useState(false);
@@ -133,10 +140,17 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     setPantry(data || []);
   }, [user.id]);
 
+  const fetchPlanHistory = useCallback(async () => {
+    const res = await fetch(`/api/ai/history?userId=${user.id}`);
+    const data = await res.json();
+    setPlanHistory(data || []);
+  }, [user.id]);
+
   useEffect(() => {
     fetchLogs();
     fetchWeightLogs();
     fetchPantry();
+    fetchPlanHistory();
     
     const fetchConfig = async () => {
         try {
@@ -179,10 +193,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const handleTabChange = (tabId: string) => {
     if ((tabId === 'diet-plans' || tabId === 'pantry') && !isElite) {
       setShowPricing(true);
-      return;
-    }
-    if ((tabId === 'diet-plans' || tabId === 'pantry') && !safetyAccepted) {
-      setShowSafety(true);
       return;
     }
     setActiveTab(tabId);
@@ -303,6 +313,14 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         }
         
         setChatMessages([...updatedHistory, { role: 'model', parts: [{ text: cleanContent }] }]);
+        
+        // Save to History
+        await fetch('/api/ai/history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, planText: cleanContent })
+        });
+        fetchPlanHistory();
       } else {
         setChatMessages([...updatedHistory, { role: 'model', parts: [{ text: `### ⚠️ AI Error\n${data.error || "Failed to respond."}` }] }]);
       }
@@ -568,42 +586,90 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
 
           {activeTab === 'diet-plans' && (
             <motion.div key="ai" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`ai-layout ${isAiExpanded ? 'expanded' : ''}`}>
-              <section className="glass-card ai-coach-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
-                <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-                    <div className="ai-controls" style={{ display: 'flex', gap: '0.5rem' }}>
-                        <select value={activeConfig.activeProvider} onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 'bold' }}>
-                            <option value="gemini">Gemini</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="anthropic">Claude</option>
-                        </select>
-                        <select value={activeConfig.activeModel} onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>
-                            {availableModels.filter(m => m.provider === activeConfig.activeProvider).map(m => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div ref={scrollRef} className="chat-history" style={{ flex: 1, overflowY: 'auto' }}>
-                    {chatMessages.map((msg, i) => (
-                        <div key={i} className={`message ${msg.role}`} style={{ marginBottom: '1rem', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-                            <div className="bubble" style={{ display: 'inline-block', padding: '0.75rem 1rem', borderRadius: '1rem', background: msg.role === 'user' ? 'var(--primary)' : 'var(--surface-raised)', color: msg.role === 'user' ? 'white' : 'inherit' }}>
-                                {msg.role === 'model' ? renderMarkdown(msg.parts[0].text) : msg.parts[0].text}
+              {!safetyAccepted ? (
+                  <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+                      <ShieldAlert size={48} color="var(--primary)" style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ marginBottom: '1rem' }}>Clinical Safety Check</h2>
+                      <p style={{ opacity: 0.8, marginBottom: '2rem' }}>
+                          By enabling the AI Coach, you acknowledge that all generated diet plans are for educational purposes and NOT medical prescriptions.
+                      </p>
+                      <button className="btn-primary" onClick={() => setSafetyAccepted(true)}>
+                          I AGREE & UNLOCK COACH
+                      </button>
+                  </div>
+              ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <section className="glass-card ai-coach-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+                        <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                            <div className="ai-controls" style={{ display: 'flex', gap: '0.5rem' }}>
+                                <select value={activeConfig.activeProvider} onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 'bold' }}>
+                                    <option value="gemini">Gemini</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Claude</option>
+                                </select>
+                                <select value={activeConfig.activeModel} onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)} style={{ width: 'auto', background: 'transparent', border: 'none', color: 'var(--text-secondary)' }}>
+                                    {availableModels.filter(m => m.provider === activeConfig.activeProvider).map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
-                    ))}
-                </div>
 
-                <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input placeholder="Ask coach..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
-                        <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading}><Send size={18} /></button>
+                        <div ref={scrollRef} className="chat-history" style={{ flex: 1, overflowY: 'auto' }}>
+                            {chatMessages.map((msg, i) => (
+                                <div key={i} className={`message ${msg.role}`} style={{ marginBottom: '1rem', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
+                                    <div className="bubble" style={{ display: 'inline-block', padding: '0.75rem 1rem', borderRadius: '1rem', background: msg.role === 'user' ? 'var(--primary)' : 'var(--surface-raised)', color: msg.role === 'user' ? 'white' : 'inherit' }}>
+                                        {msg.role === 'model' ? (
+                                            <div>
+                                                {renderMarkdown(msg.parts[0].text)}
+                                                {parsedMeals[i] && (
+                                                    <button onClick={() => logAiSuggestion(i)} className="btn-primary" style={{ marginTop: '1rem', fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+                                                        <Plus size={14} /> Log this Day
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : msg.parts[0].text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input placeholder="Ask coach..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
+                                <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading}><Send size={18} /></button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Plan History Gallery */}
+                    <div className="history-section">
+                        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <TrendingUp size={20} color="var(--primary)" /> Prescription History
+                        </h3>
+                        <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
+                            {planHistory.map((plan, i) => (
+                                <div key={i} className="glass-card" style={{ padding: '1rem', fontSize: '0.85rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: 0.6 }}>
+                                        <span>{new Date(plan.date).toLocaleDateString()}</span>
+                                        <Sparkles size={14} />
+                                    </div>
+                                    <div style={{ maxHeight: '150px', overflowY: 'auto', borderLeft: '2px solid var(--primary)', paddingLeft: '0.75rem' }}>
+                                        {renderMarkdown(plan.planText.substring(0, 300) + '...')}
+                                    </div>
+                                    <button 
+                                        onClick={() => setChatMessages([{ role: 'model', parts: [{ text: plan.planText }] }])}
+                                        style={{ marginTop: '1rem', width: '100%', padding: '0.4rem', borderRadius: '0.5rem', background: 'var(--surface-raised)', fontSize: '0.75rem' }}
+                                    >
+                                        Re-load Full Plan
+                                    </button>
+                                </div>
+                            ))}
+                            {planHistory.length === 0 && <p style={{ opacity: 0.5 }}>No plans archived yet.</p>}
+                        </div>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.5, textAlign: 'center', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
-                        <ShieldAlert size={12} /> Nutrition suggestions are AI-generated & NOT medical advice. Consult a doctor.
-                    </div>
-                </div>
-              </section>
+                  </div>
+              )}
             </motion.div>
           )}
 

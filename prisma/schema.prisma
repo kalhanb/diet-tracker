@@ -32,6 +32,7 @@ model User {
   logs                 DietLog[]
   weightLogs           WeightLog[]
   waterLogs            WaterLog[]
+  dietPlanHistory      DietPlanArchive[]
   pantry               PantryItem[]
   
   // Clinical markers
@@ -48,6 +49,14 @@ model WaterLog {
   date      DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model DietPlanArchive {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  planText  String   @db.Text
+  date      DateTime @default(now())
 }
 
 model DietLog {
