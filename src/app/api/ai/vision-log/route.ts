@@ -32,8 +32,12 @@ export async function POST(request: Request) {
         ]);
 
         const responseText = await result.response.text();
-        const jsonContent = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const mealData = JSON.parse(jsonContent);
+        
+        // RE-ENGINEERED: Surgical Regex Extraction
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Plate analysis failed to generate clinical data.");
+        
+        const mealData = JSON.parse(jsonMatch[0]);
 
         const { coachingTip, ...dbData } = mealData;
         const savedLog = await prisma.dietLog.create({

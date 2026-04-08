@@ -287,6 +287,8 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       e.preventDefault();
       if (!pulseInput.trim()) return;
       setIsPulseLoading(true);
+      setLoggingStatus('Clinical Analyst Processing... 🧠');
+      
       try {
           const res = await fetch('/api/ai/pulse-log', {
               method: 'POST',
@@ -301,11 +303,16 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               fetchLogs();
               setTimeout(() => {
                 setLoggingStatus(null);
-                // Keep advice visible a bit longer
                 setTimeout(() => setCoachAdvice(null), 8000);
               }, 3000);
+          } else {
+              setLoggingStatus('Pulse Error: Check Input ⚠️');
+              setTimeout(() => setLoggingStatus(null), 4000);
           }
-      } catch (e) {}
+      } catch (err) {
+          setLoggingStatus('Clinical Interruption ⚠️');
+          setTimeout(() => setLoggingStatus(null), 4000);
+      }
       finally { setIsPulseLoading(false); }
   };
 
@@ -371,6 +378,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
     const messageToSend = text || chatInput;
     if (!messageToSend.trim()) return;
 
+    setLoggingStatus('Consulting AI Dietitian... 💬');
     const newUserMessage = { role: 'user' as const, parts: [{ text: messageToSend }] };
     const updatedHistory = [...chatMessages, newUserMessage];
     

@@ -27,9 +27,11 @@ export async function POST(request: Request) {
         const result = await model.generateContent(prompt);
         const responseText = await result.response.text();
         
-        // Clean the response
-        const jsonContent = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const mealData = JSON.parse(jsonContent);
+        // RE-ENGINEERED: Surgical Regex Extraction for JSON
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("No clinical data found in AI response");
+        
+        const mealData = JSON.parse(jsonMatch[0]);
 
         // Save to DB (filter out coachingTip for DB save)
         const { coachingTip, ...dbData } = mealData;
