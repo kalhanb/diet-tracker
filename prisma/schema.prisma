@@ -18,6 +18,7 @@ model User {
   activityLevel        String
   goalType             String
   dailyCalories        Int
+  dailyWaterGoal       Int         @default(2000)
   targetWeight         Float
   
   // Subscription Fields

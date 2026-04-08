@@ -11,6 +11,7 @@ interface User {
   height: number;
   goalType: string;
   targetWeight: number;
+  dailyWaterGoal: number;
   ldlLevel?: number;
   medications?: string;
 }
@@ -30,6 +31,7 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
     activityLevel: 'moderate',
     goalType: 'loss',
     targetWeight: '',
+    dailyWaterGoal: '2000',
     ldlLevel: '',
     glucoseLevel: '',
     bloodPressure: '',
@@ -128,7 +130,10 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
                 </select>
             </div>
 
-            <input placeholder="Target Weight (kg)" type="number" step="0.1" value={formData.targetWeight} onChange={e => setFormData({...formData, targetWeight: e.target.value})} required />
+            <div className="grid grid-cols-2">
+                <input placeholder="Target Weight (kg)" type="number" step="0.1" value={formData.targetWeight} onChange={e => setFormData({...formData, targetWeight: e.target.value})} required />
+                <input placeholder="Daily Water Goal (ml)" type="number" step="100" value={formData.dailyWaterGoal} onChange={e => setFormData({...formData, dailyWaterGoal: e.target.value})} required />
+            </div>
 
             <div style={{ margin: '1rem 0', padding: '1.5rem', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '1rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: 'var(--primary)' }}>

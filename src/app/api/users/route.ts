@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { 
     email, name, age, gender, weight, height, activityLevel, goalType, 
-    targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions 
+    dailyWaterGoal, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions 
   } = body;
 
   const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       height: parseFloat(height),
       activityLevel,
       goalType,
+      dailyWaterGoal: parseInt(dailyWaterGoal) || 2000,
       targetWeight: parseFloat(targetWeight),
       dailyCalories,
       ldlLevel: ldlLevel?.toString() || null,
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     const body = await request.json();
-    const { id, name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions } = body;
+    const { id, name, age, gender, weight, height, activityLevel, goalType, dailyWaterGoal, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions } = body;
 
     const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
     const tdee = calculateTDEE(bmr, activityLevel);
@@ -61,6 +62,7 @@ export async function PATCH(request: Request) {
             height: parseFloat(height),
             activityLevel,
             goalType,
+            dailyWaterGoal: parseInt(dailyWaterGoal) || 2000,
             targetWeight: parseFloat(targetWeight),
             dailyCalories,
             ldlLevel: ldlLevel?.toString() || null,

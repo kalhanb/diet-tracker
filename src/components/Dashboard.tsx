@@ -26,6 +26,7 @@ interface User {
   goalType: string;
   targetWeight: number;
   dailyCalories: number;
+  dailyWaterGoal: number;
   subscriptionStatus?: string;
   ldlLevel      ?: string;
   glucoseLevel  ?: string;
@@ -479,15 +480,25 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                         </button>
                     </div>
 
-                    <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>Hydration Lab</h3>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>{waterAmount} <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>ml</span></p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>Hydration Lab</h3>
+                                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>
+                                    {waterAmount} <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>/ {user.dailyWaterGoal} ml</span>
+                                </p>
+                            </div>
                             <button className="btn-secondary" style={{ padding: '0.75rem', borderRadius: '50%', color: 'var(--accent)' }} onClick={() => handleAddWater(250)}>
                                 <Droplets size={20} />
                             </button>
+                        </div>
+                        <div className="water-progress" style={{ background: 'rgba(192, 132, 252, 0.1)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ 
+                                width: `${Math.min((waterAmount / (user.dailyWaterGoal || 2000)) * 100, 100)}%`, 
+                                height: '100%', 
+                                background: 'var(--accent)',
+                                transition: '0.5s ease'
+                            }}></div>
                         </div>
                     </div>
                 </div>
