@@ -10,7 +10,16 @@ export async function POST(request: Request) {
     if (!text || !userId) return NextResponse.json({ error: "Missing data" }, { status: 400 });
 
     const prompt = `Convert this meal description into a JSON log entry: "${text}". 
-    Output ONLY JSON in this format: {"foodName": "...", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "mealType": "Breakfast/Lunch/Dinner/Snack", "mood": "Energetic/Bloated/Tired/Neutral"}. 
+    Output ONLY JSON in this format: {
+        "foodName": "...", 
+        "calories": 0, 
+        "protein": 0, 
+        "carbs": 0, 
+        "fat": 0, 
+        "mealType": "Breakfast/Lunch/Dinner/Snack", 
+        "mood": "Energetic/Bloated/Tired/Neutral",
+        "coachingTip": "As a clinical dietitian, give 1 sentence of proactive advice for this meal."
+    }. 
     Estimate values realistically based on standard portions.`;
 
     try {
@@ -18,19 +27,17 @@ export async function POST(request: Request) {
         const result = await model.generateContent(prompt);
         const responseText = await result.response.text();
         
-        // Clean the response in case AI adds markdown wraps
+        // Clean the response
         const jsonContent = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const mealData = JSON.parse(jsonContent);
 
-        // Save to DB
+        // Save to DB (filter out coachingTip for DB save)
+        const { coachingTip, ...dbData } = mealData;
         const savedLog = await prisma.dietLog.create({
-            data: {
-                ...mealData,
-                userId
-            }
+            data: { ...dbData, userId }
         });
 
-        return NextResponse.json(savedLog);
+        return NextResponse.json({ ...savedLog, coachingTip });
     } catch (error) {
         console.error('Pulse Log Error:', error);
         return NextResponse.json({ error: "Failed to parse meal" }, { status: 500 });

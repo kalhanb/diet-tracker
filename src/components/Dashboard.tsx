@@ -114,6 +114,7 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [pulseInput, setPulseInput] = useState('');
   const [isPulseLoading, setIsPulseLoading] = useState(false);
   const [isVisionLoading, setIsVisionLoading] = useState(false);
+  const [coachAdvice, setCoachAdvice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -293,10 +294,16 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               body: JSON.stringify({ text: pulseInput, userId: user.id }),
           });
           if (res.ok) {
+              const data = await res.json();
               setPulseInput('');
               setLoggingStatus('Insight Synchronized! 🧬');
+              setCoachAdvice(data.coachingTip);
               fetchLogs();
-              setTimeout(() => setLoggingStatus(null), 3000);
+              setTimeout(() => {
+                setLoggingStatus(null);
+                // Keep advice visible a bit longer
+                setTimeout(() => setCoachAdvice(null), 8000);
+              }, 3000);
           }
       } catch (e) {}
       finally { setIsPulseLoading(false); }
@@ -320,9 +327,14 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                   body: JSON.stringify({ image: base64, userId: user.id }),
               });
               if (res.ok) {
+                  const data = await res.json();
                   setLoggingStatus('Visual Intel Acquired! 🧬');
+                  setCoachAdvice(data.coachingTip);
                   fetchLogs();
-                  setTimeout(() => setLoggingStatus(null), 3000);
+                  setTimeout(() => {
+                    setLoggingStatus(null);
+                    setTimeout(() => setCoachAdvice(null), 8000);
+                  }, 3000);
               } else {
                   setLoggingStatus('Vision Error: Check Subject ⚠️');
                   setTimeout(() => setLoggingStatus(null), 3000);
@@ -608,8 +620,30 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
               <div className="grid grid-cols-2">
                 {/* Fuel & Hydration */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div className="glass-card main-stat">
+                    <div className="glass-card main-stat" style={{ position: 'relative' }}>
                         <h3 style={{ marginBottom: '1rem' }}>Zero-Friction Pulse 🎙️</h3>
+
+                        <AnimatePresence>
+                            {coachAdvice && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                    style={{ 
+                                        marginBottom: '1rem', padding: '1rem', 
+                                        background: 'var(--primary)', color: 'white', 
+                                        borderRadius: '1rem', borderBottomLeftRadius: '0.2rem',
+                                        fontSize: '0.85rem', fontWeight: '500',
+                                        boxShadow: '0 10px 25px -5px rgba(192, 132, 252, 0.4)',
+                                        display: 'flex', gap: '0.75rem', alignItems: 'flex-start'
+                                    }}
+                                >
+                                    <Sparkles size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                                    <span>{coachAdvice}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <form onSubmit={handlePulseLog} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
                             <input 
                                 placeholder="I just had a bowl of oats and berries..." 
