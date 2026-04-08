@@ -14,6 +14,20 @@
   --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
+body.light-mode {
+  --background: #f1f5f9;
+  --surface: #ffffff;
+  --surface-raised: #f8fafc;
+  --primary: #0d9488;
+  --secondary: #ea580c;
+  --accent: #9333ea;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --card-border: rgba(0, 0, 0, 0.05);
+  --glass: rgba(255, 255, 255, 0.8);
+  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -51,6 +65,13 @@ button {
   padding: 2rem 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .premium-container {
+    padding: 1rem;
+    padding-bottom: 5rem; /* Space for bottom nav */
+  }
+}
+
 .glass-card {
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -60,6 +81,13 @@ button {
   padding: 1.5rem;
   box-shadow: var(--shadow);
   transition: all 0.3s ease;
+}
+
+@media (max-width: 640px) {
+  .glass-card {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
 }
 
 .glass-card:hover {
@@ -73,7 +101,7 @@ button {
   -webkit-text-fill-color: transparent;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   padding: 0.75rem 1rem;
   background: var(--surface-raised);
@@ -100,6 +128,11 @@ input:focus, select:focus {
   align-items: center;
   gap: 0.5rem;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -115,6 +148,12 @@ input:focus, select:focus {
   gap: 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .grid {
+    gap: 1rem;
+  }
+}
+
 .grid-cols-2 {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -126,6 +165,51 @@ input:focus, select:focus {
 @media (max-width: 768px) {
   .grid-cols-2, .grid-cols-3 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Dashboard Specific Responsive Utilities */
+.dashboard-tabs {
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 640px) {
+  .dashboard-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    margin-bottom: 0;
+    padding: 0.75rem;
+    z-index: 1000;
+    border-top: 1px solid var(--card-border);
+    backdrop-filter: blur(20px);
+  }
+
+  .tabs-list {
+    display: flex;
+    justify-content: space-around;
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .tab-btn span {
+    display: none; /* Hide text on mobile for small icon nav */
+  }
+  
+  .tab-btn {
+    padding: 0.75rem !important;
+  }
+}
+
+.ai-layout.expanded {
+  grid-template-columns: 1fr !important;
+}
+
+@media (max-width: 900px) {
+  .ai-layout {
+    grid-template-columns: 1fr !important;
   }
 }
 

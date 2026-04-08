@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LayoutDashboard, TrendingUp, Sparkles, Plus, Send, CheckCircle2, ShoppingBag, Trash2, ShieldAlert, Settings, UserCircle, Scale, Edit2, Maximize2, Minimize2, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Sparkles, ShoppingBag, Plus, Scale, Settings, UserCircle, PlusCircle, Trash2, Edit2, ArrowLeft, CheckCircle2, Send, ShieldAlert, Maximize2, Minimize2, Sun, Moon, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
 
@@ -73,6 +73,13 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [isAiExpanded, setIsAiExpanded] = useState(false);
   const [activeConfig, setActiveConfig] = useState({ activeProvider: 'gemini', activeModel: 'gemini-1.5-flash-latest' });
   const [availableModels, setAvailableModels] = useState<{provider: string, id: string, name: string}[]>([]);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.body.classList.toggle('light-mode', newTheme === 'light');
+  };
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -372,369 +379,188 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   };
 
   return (
-    <div className="premium-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <div>
-          <h1 className="gradient-text" style={{ fontSize: '2rem' }}>Personalized NutriTrack</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Elite Dashboard for {user.name}</p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {(user.ldlLevel || user.medications) && (
-              <div className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldAlert size={16} /> Bio-Monitoring Active
-              </div>
-          )}
-          <button className="btn-secondary" style={{ padding: '0.6rem' }} onClick={() => setShowProfileEdit(true)}><Settings size={20} /></button>
-          <button className="btn-secondary" onClick={onBack}>Sign Out</button>
+    <div className={`dashboard-container premium-container ${theme === 'light' ? 'light-mode' : ''}`}>
+      {/* Top Header Section */}
+      <header className="main-header glass-card" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="avatar">
+              <UserCircle size={40} color="var(--primary)" />
+            </div>
+            <div>
+              <h1 style={{ fontSize: '1.25rem' }}>Master {user.name}</h1>
+              <p className="status-badge" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Phase: {user.goalType === 'Weight Loss' ? 'Cutting' : user.goalType === 'Muscle Gain' ? 'Bulking' : 'Performance'}</p>
+            </div>
+          </div>
+          <div className="header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
+             <button className="btn-secondary" style={{ padding: '0.5rem' }} onClick={toggleTheme}>
+               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+             </button>
+             <button className="btn-secondary" style={{ padding: '0.5rem' }} onClick={() => setShowProfileEdit(true)}>
+               <Settings size={20} />
+             </button>
+             <button className="btn-secondary" onClick={onBack}>Sign Out</button>
+          </div>
         </div>
       </header>
 
-      <nav style={{ display: 'flex', gap: '1rem', marginBottom: '2.5rem', background: 'var(--surface)', padding: '0.4rem', borderRadius: '1rem', width: 'fit-content' }}>
-        {[
-            { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Stats' },
-            { id: 'trends', icon: <TrendingUp size={20} />, label: 'Trends' },
-            { id: 'diet-plans', icon: <Sparkles size={20} />, label: 'AI Coach' },
-            { id: 'pantry', icon: <ShoppingBag size={20} />, label: 'Pantry' },
-            { id: 'admin', icon: <ShieldCheck size={20} />, label: 'Admin' }
-        ].map((tab) => (
-            <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem',
-                    borderRadius: '0.75rem', fontWeight: 600, color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    background: activeTab === tab.id ? 'var(--surface-raised)' : 'transparent', transition: '0.3s'
-                }}
-            >
-                {tab.icon} {tab.label}
-            </button>
-        ))}
+      {/* Navigation Tabs */}
+      <nav className="dashboard-tabs">
+        <div className="tabs-list glass-card" style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem', borderRadius: '1rem' }}>
+            {[
+                { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Stats' },
+                { id: 'trends', icon: <TrendingUp size={20} />, label: 'Trends' },
+                { id: 'diet-plans', icon: <Sparkles size={20} />, label: 'AI Coach' },
+                { id: 'pantry', icon: <ShoppingBag size={20} />, label: 'Pantry' }
+            ].map((tab) => (
+                <button
+                    key={tab.id}
+                    className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem',
+                        borderRadius: '0.75rem', fontWeight: 600, color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        background: activeTab === tab.id ? 'var(--surface-raised)' : 'transparent', transition: '0.3s'
+                    }}
+                >
+                    {tab.icon} <span>{tab.label}</span>
+                </button>
+            ))}
+        </div>
       </nav>
 
-      {activeTab === 'dashboard' && (
-        <div className="grid grid-cols-2">
-          <section className="glass-card" style={{ gridColumn: 'span 2', textAlign: 'center', padding: '2.5rem' }}>
-            <h2 style={{ marginBottom: '1.5rem', opacity: 0.8 }}>Daily Calorie Progress</h2>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4rem', marginBottom: '2rem' }}>
-              <div>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>CONSUMED</p>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800 }}>{caloriesConsumed}</p>
-              </div>
-              <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '16px solid var(--surface-raised)' }}></div>
-                <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '16px solid var(--primary)', clipPath: `polygon(50% 50%, -50% -50%, ${progressPercent > 25 ? '150% -50%' : '50% -50%'}, ${progressPercent > 50 ? '150% 150%' : '50% 150%'}, ${progressPercent > 75 ? '-50% 150%' : '50% 150%'}, 50% 50%)`, transform: 'rotate(-90deg)' }}></div>
-                <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>{caloriesRemaining}</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>KCAL LEFT</p>
+      {/* Main Content Area */}
+      <main className="dashboard-main">
+        <AnimatePresence mode="wait">
+          {activeTab === 'dashboard' && (
+            <motion.div key="stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid">
+              <div className="grid grid-cols-2">
+                <div className="glass-card main-stat">
+                    <div className="stat-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <h3>Fuel Status</h3>
+                        <span className="value" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{caloriesConsumed} / {user.dailyCalories}</span>
+                    </div>
+                    <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1rem' }}>
+                        <div className="progress-bar" style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary)' }}></div>
+                    </div>
+                    <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setEditingLog(null); setShowLogForm(true); }}>
+                        <Plus size={18} /> Log Fuel
+                    </button>
+                </div>
+                <div className="glass-card activity-log">
+                    <h3 style={{ marginBottom: '1rem' }}>Daily Feed</h3>
+                    <div className="log-items" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {logs.map(log => (
+                            <div key={log.id} className="log-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{log.foodName}</h4>
+                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{log.calories} kcal • {log.mealType}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={14} /></button>
+                                    <button onClick={() => handleDeleteLog(log.id)} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
               </div>
-              <div>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>TARGET</p>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800 }}>{user.dailyCalories}</p>
+            </motion.div>
+          )}
+
+          {activeTab === 'trends' && (
+            <motion.div key="trends" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <div className="glass-card chart-card">
+                <h2>Progress Report</h2>
+                <div style={{ height: '300px' }}>
+                    <Line data={chartData} options={{ maintainAspectRatio: false }} />
+                </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-              <button className="btn-primary" onClick={() => setShowLogForm(true)}><Plus size={20} /> Log Meal</button>
-              <button className="btn-secondary" onClick={() => setShowWeightForm(true)}><Scale size={20} /> Update Weight</button>
-            </div>
-          </section>
+            </motion.div>
+          )}
 
-          <section className="glass-card" style={{ gridColumn: 'span 2' }}>
-            <h2 style={{ marginBottom: '1.5rem' }}>Daily Feed</h2>
-            <div className="grid">
-              {logs.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Feed is empty. Start logging!</p>
-              ) : (
-                logs.map((log) => (
-                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-raised)', padding: '1.25rem 1.5rem', borderRadius: '1rem' }}>
-                    <div>
-                      <h4 style={{ fontSize: '1.1rem', margin: 0 }}>{log.foodName}</h4>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>{log.mealType} • P: {log.protein}g | C: {log.carbs}g | F: {log.fat}g</p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--secondary)' }}>{log.calories} kcal</span>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn-secondary" style={{ padding: '0.5rem', opacity: 0.6 }} onClick={() => { setEditingLog(log); setShowEditLogForm(true); }}><Edit2 size={16} /></button>
-                            <button className="btn-secondary" style={{ padding: '0.5rem', opacity: 0.6, color: 'var(--error)' }} onClick={() => handleDeleteLog(log.id)}><Trash2 size={16} /></button>
-                        </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {activeTab === 'trends' && (
-        <section className="glass-card">
-          <h2 style={{ marginBottom: '2rem' }}>Progress Report</h2>
-          <div style={{ height: '400px' }}>
-            <Line data={chartData} options={{ maintainAspectRatio: false }} />
-          </div>
-        </section>
-      )}
-
-      {activeTab === 'diet-plans' && (
-        <div className={`ai-layout ${isAiExpanded ? 'expanded' : ''}`} style={{ display: 'grid', gridTemplateColumns: isAiExpanded ? '1fr' : '1fr 300px', gap: '2rem', height: '100%' }}>
-          <motion.section 
-            id="ai-coach"
-            className="glass-card ai-coach-container"
-            layout
-            style={{ display: 'flex', flexDirection: 'column', height: isAiExpanded ? '75vh' : '65vh', position: 'relative', background: 'rgba(30, 41, 59, 0.4)' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Elite Coach</h2>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.25rem 0.75rem', borderRadius: '2rem', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                        <select 
-                            value={activeConfig.activeProvider} 
-                            onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', outline: 'none' }}
-                        >
+          {activeTab === 'diet-plans' && (
+            <motion.div key="ai" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`ai-layout ${isAiExpanded ? 'expanded' : ''}`}>
+              <section className="glass-card ai-coach-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+                <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                    <div className="ai-controls" style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select className="pill-select" value={activeConfig.activeProvider} onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)} style={{ width: 'auto' }}>
                             <option value="gemini">Gemini</option>
                             <option value="openai">OpenAI</option>
                             <option value="anthropic">Claude</option>
                         </select>
-                        <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                        {availableModels.length === 0 ? (
-                            <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Syncing...</span>
-                        ) : (
-                            <select 
-                                value={activeConfig.activeModel} 
-                                onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}
-                            >
-                                {availableModels
-                                    .filter(m => m.provider === activeConfig.activeProvider)
-                                    .map(m => (
-                                        <option key={m.id} value={m.id}>{m.name}</option>
-                                    ))}
-                            </select>
-                        )}
+                        <select className="pill-select" value={activeConfig.activeModel} onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)} style={{ width: 'auto' }}>
+                            {availableModels.filter(m => m.provider === activeConfig.activeProvider).map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
                     </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-secondary" style={{ padding: '0.5rem' }} onClick={() => setIsAiExpanded(!isAiExpanded)}>
+                    <button className="btn-secondary" style={{ padding: '0.4rem' }} onClick={() => setIsAiExpanded(!isAiExpanded)}>
                         {isAiExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                     </button>
                 </div>
-            </div>
 
-             <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingRight: '0.5rem', marginBottom: '1.5rem' }}>
-                {chatMessages.length === 0 ? (
-                    <div style={{ margin: 'auto', textAlign: 'center', maxWidth: '300px' }}>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Welcome! Would you like a daily plan utilizing your specific pantry?</p>
-                        <button className="btn-primary" style={{ marginTop: '1rem', width: '100%' }} onClick={() => sendChatMessage("Create a daily plan based on my current pantry")}>Analyze My Pantry</button>
-                    </div>
-                ) : (
-                    chatMessages.map((msg, i) => (
-                        <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: isAiExpanded ? '90%' : '85%' }}>
-                            <div style={{
-                                padding: '1.25rem', borderRadius: '1rem',
-                                background: msg.role === 'user' ? 'var(--primary)' : 'var(--surface-raised)',
-                                color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
-                                borderTopLeftRadius: msg.role === 'model' ? '0' : '1rem',
-                                borderTopRightRadius: msg.role === 'user' ? '0' : '1rem',
-                                fontSize: '0.95rem', lineHeight: 1.6
-                            }}>
+                <div ref={scrollRef} className="chat-history" style={{ flex: 1, overflowY: 'auto' }}>
+                    {chatMessages.map((msg, i) => (
+                        <div key={i} className={`message ${msg.role}`} style={{ marginBottom: '1rem', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
+                            <div className="bubble" style={{ display: 'inline-block', padding: '0.75rem 1rem', borderRadius: '1rem', background: msg.role === 'user' ? 'var(--primary)' : 'var(--surface-raised)', color: msg.role === 'user' ? 'white' : 'inherit' }}>
                                 {msg.role === 'model' ? renderMarkdown(msg.parts[0].text) : msg.parts[0].text}
                             </div>
-                            {msg.role === 'model' && parsedMeals[i] && (
-                                <button
-                                    onClick={() => logAiSuggestion(i)}
-                                    className="btn-primary"
-                                    style={{ marginTop: '0.75rem', width: '100%', background: 'var(--success)', fontSize: '0.8rem', padding: '0.5rem' }}
-                                >
-                                    <CheckCircle2 size={16} /> Log This AI Plan
-                                </button>
-                            )}
-                        </div>
-                    ))
-                )}
-                {isAiLoading && <div className="loader-dots">Coach is analyzing...</div>}
-                {loggingStatus && <div style={{ alignSelf: 'center', background: 'rgba(34, 197, 94, 0.2)', color: 'var(--success)', padding: '0.75rem', borderRadius: '0.75rem', fontSize: '0.9rem' }}>{loggingStatus}</div>}
-             </div>
-
-             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <input placeholder="Ask me anything..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
-                <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading || !chatInput.trim()}><Send size={18} /></button>
-             </div>
-          </motion.section>
-
-          {!isAiExpanded && (
-              <section className="grid" style={{ alignContent: 'start' }}>
-                <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Favorite Items</h2>
-                <div className="grid">
-                    {mealLibrary.slice(0, 5).map((meal) => (
-                        <div key={meal.id} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4 style={{ fontSize: '0.95rem' }}>{meal.name}</h4>
-                            <button className="btn-primary" style={{ padding: '0.5rem' }} onClick={() => {
-                                setFormData({ foodName: meal.name, calories: meal.calories.toString(), protein: meal.protein.toString(), carbs: meal.carbs.toString(), fat: meal.fat.toString(), mealType: meal.category });
-                                setShowLogForm(true);
-                            }}><Plus size={18} /></button>
                         </div>
                     ))}
+                    {isAiLoading && <div className="loader-dots">Coach is analyzing...</div>}
+                </div>
+
+                <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    <input placeholder="Ask coach..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
+                    <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading}><Send size={18} /></button>
                 </div>
               </section>
+            </motion.div>
           )}
-        </div>
-      )}
 
-      {activeTab === 'pantry' && (
-          <section className="glass-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h2>My Digital Pantry (What I have in stock)</h2>
-                  <button className="btn-primary" onClick={() => setShowPantryForm(true)}><Plus size={20} /> Add Item</button>
-              </div>
-              <div className="grid grid-cols-3">
-                  {pantry.map(item => (
-                      <div key={item.id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                          <h4 style={{ fontSize: '1rem' }}>{item.name}</h4>
-                          <button onClick={() => deletePantryItem(item.id)} style={{ color: 'var(--error)', opacity: 0.6 }}><Trash2 size={16} /></button>
-                      </div>
-                  ))}
-                  {pantry.length === 0 && (
-                      <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
-                          <ShoppingBag size={48} style={{ margin: '0 auto 1.5rem' }} />
-                          <p>Your pantry is currently empty. Add items to see AI suggestions.</p>
-                      </div>
-                  )}
-              </div>
-          </section>
-      )}
+          {activeTab === 'pantry' && (
+              <motion.div key="pantry" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="glass-card">
+                  <div className="pantry-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                      <h2>Pantry</h2>
+                      <button className="btn-primary" style={{ padding: '0.5rem' }} onClick={() => setShowPantryForm(true)}><Plus size={20} /></button>
+                  </div>
+                  <div className="grid grid-cols-3">
+                      {pantry.map(item => (
+                          <div key={item.id} className="pantry-item" style={{ background: 'var(--surface-raised)', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.9rem' }}>{item.name}</span>
+                              <button onClick={() => deletePantryItem(item.id)} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
+                          </div>
+                      ))}
+                  </div>
+              </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
-      {/* Forms */}
+      {/* Global Modals remain at the end */}
       {showLogForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ maxWidth: '500px', width: '90%' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card modal" style={{ width: '90%', maxWidth: '400px' }}>
             <h2>New Entry</h2>
-            <form onSubmit={handleAddLog} className="grid" style={{ marginTop: '1.5rem' }}>
-              <input placeholder="Name" value={formData.foodName} onChange={e => setFormData({ ...formData, foodName: e.target.value })} required />
-              <div className="grid grid-cols-2">
-                <input placeholder="Kcal" type="number" value={formData.calories} onChange={e => setFormData({ ...formData, calories: e.target.value })} required />
-                <select value={formData.mealType} onChange={e => setFormData({ ...formData, mealType: e.target.value })}>
-                   <option value="Breakfast">Breakfast</option>
-                   <option value="Lunch">Lunch</option>
-                   <option value="Dinner">Dinner</option>
-                   <option value="Snacks">Snack</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-3">
-                <input placeholder="P (g)" type="number" step="0.1" value={formData.protein} onChange={e => setFormData({ ...formData, protein: e.target.value })} />
-                <input placeholder="C (g)" type="number" step="0.1" value={formData.carbs} onChange={e => setFormData({ ...formData, carbs: e.target.value })} />
-                <input placeholder="F (g)" type="number" step="0.1" value={formData.fat} onChange={e => setFormData({ ...formData, fat: e.target.value })} />
-              </div>
-              <button type="submit" className="btn-primary">Add Entry</button>
+            <form onSubmit={handleAddLog} className="grid" style={{ marginTop: '1rem' }}>
+              <input placeholder="Food Name" value={formData.foodName} onChange={e => setFormData({ ...formData, foodName: e.target.value })} required />
+              <input placeholder="Calories" type="number" value={formData.calories} onChange={e => setFormData({ ...formData, calories: e.target.value })} required />
+              <button type="submit" className="btn-primary">Save Entry</button>
               <button type="button" className="btn-secondary" onClick={() => setShowLogForm(false)}>Cancel</button>
             </form>
           </div>
         </div>
       )}
 
-      {showPantryForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ maxWidth: '400px', width: '90%' }}>
-            <h2>Add Pantry Item</h2>
-            <form onSubmit={handleAddPantry} className="grid" style={{ marginTop: '1.5rem' }}>
-              <input placeholder="Item Name (e.g. Kirkland Shrimp)" value={pantryItemName} onChange={e => setPantryItemName(e.target.value)} required autoFocus />
-              <button type="submit" className="btn-primary">Add to Pantry</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowPantryForm(false)}>Cancel</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showWeightForm && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ maxWidth: '400px', width: '90%' }}>
-            <h2>New Weight Log</h2>
-            <form onSubmit={handleAddWeight} className="grid" style={{ marginTop: '1.5rem' }}>
-              <input placeholder="kg" type="number" step="0.1" value={weightFormData.weight} onChange={e => setWeightFormData({ weight: parseFloat(e.target.value) })} required />
-              <button type="submit" className="btn-primary">Update Weight</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowWeightForm(false)}>Cancel</button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {showProfileEdit && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px' }}>
-          <div className="glass-card" style={{ maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                <UserCircle size={32} color="var(--primary)" />
-                <h2>Manage Elite Profile</h2>
-            </div>
-            <form onSubmit={handleUpdateProfile} className="grid">
-              <div className="grid grid-cols-2">
-                <input placeholder="Name" value={profileFormData.name} onChange={e => setProfileFormData({ ...profileFormData, name: e.target.value })} required />
-                <input placeholder="Age" type="number" value={profileFormData.age} onChange={e => setProfileFormData({ ...profileFormData, age: parseInt(e.target.value) })} required />
-              </div>
-              <div className="grid grid-cols-3">
-                <select value={profileFormData.gender} onChange={e => setProfileFormData({ ...profileFormData, gender: e.target.value })}>
-                   <option value="male">Male</option>
-                   <option value="female">Female</option>
-                </select>
-                <input placeholder="Weight (kg)" type="number" step="0.1" value={profileFormData.weight} onChange={e => setProfileFormData({ ...profileFormData, weight: parseFloat(e.target.value) })} required />
-                <input placeholder="Height (cm)" type="number" step="0.1" value={profileFormData.height} onChange={e => setProfileFormData({ ...profileFormData, height: parseFloat(e.target.value) })} required />
-              </div>
-              <div className="grid grid-cols-2">
-                <select value={profileFormData.activityLevel} onChange={e => setProfileFormData({ ...profileFormData, activityLevel: e.target.value })}>
-                    <option value="sedentary">Sedentary</option>
-                    <option value="light">Lightly Active</option>
-                    <option value="moderate">Moderately Active</option>
-                    <option value="very">Very Active</option>
-                </select>
-                <select value={profileFormData.goalType} onChange={e => setProfileFormData({ ...profileFormData, goalType: e.target.value })}>
-                    <option value="loss">Weight Loss</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="gain">Gain Muscle</option>
-                </select>
-              </div>
-              <input placeholder="Target Weight (kg)" type="number" step="0.1" value={profileFormData.targetWeight} onChange={e => setProfileFormData({ ...profileFormData, targetWeight: parseFloat(e.target.value) })} required />
-              
-              <div style={{ padding: '1.5rem', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '1rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                  <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldAlert size={18} /> Clinical Bio-Markers</h4>
-                  <div className="grid grid-cols-2" style={{ marginBottom: '0.5rem' }}>
-                    <input placeholder="LDL Level" type="number" value={profileFormData.ldlLevel} onChange={e => setProfileFormData({ ...profileFormData, ldlLevel: e.target.value })} />
-                    <input placeholder="Glucose Level" type="number" value={profileFormData.glucoseLevel} onChange={e => setProfileFormData({ ...profileFormData, glucoseLevel: e.target.value })} />
-                  </div>
-                  <div className="grid grid-cols-2" style={{ marginBottom: '0.5rem' }}>
-                    <input placeholder="Blood Pressure" value={profileFormData.bloodPressure} onChange={e => setProfileFormData({ ...profileFormData, bloodPressure: e.target.value })} />
-                    <input placeholder="Medications" value={profileFormData.medications} onChange={e => setProfileFormData({ ...profileFormData, medications: e.target.value })} />
-                  </div>
-                  <input placeholder="Other Conditions" value={profileFormData.healthConditions} onChange={e => setProfileFormData({ ...profileFormData, healthConditions: e.target.value })} />
-              </div>
-
-              <button type="submit" className="btn-primary">Update Profile Targets</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowProfileEdit(false)}>Close Without Saving</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditLogForm && editingLog && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ maxWidth: '500px', width: '90%' }}>
-            <h2>Edit Meal Log</h2>
-            <form onSubmit={handleEditLog} className="grid" style={{ marginTop: '1.5rem' }}>
-              <input placeholder="Name" value={editingLog.foodName} onChange={e => setEditingLog({ ...editingLog, foodName: e.target.value })} required />
-              <div className="grid grid-cols-2">
-                <input placeholder="Kcal" type="number" value={editingLog.calories} onChange={e => setEditingLog({ ...editingLog, calories: parseInt(e.target.value) })} required />
-                <select value={editingLog.mealType} onChange={e => setEditingLog({ ...editingLog, mealType: e.target.value })}>
-                   <option value="Breakfast">Breakfast</option>
-                   <option value="Lunch">Lunch</option>
-                   <option value="Dinner">Dinner</option>
-                   <option value="Snacks">Snack</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-3">
-                <input placeholder="P (g)" type="number" step="0.1" value={editingLog.protein} onChange={e => setEditingLog({ ...editingLog, protein: parseFloat(e.target.value) })} />
-                <input placeholder="C (g)" type="number" step="0.1" value={editingLog.carbs} onChange={e => setEditingLog({ ...editingLog, carbs: parseFloat(e.target.value) })} />
-                <input placeholder="F (g)" type="number" step="0.1" value={editingLog.fat} onChange={e => setEditingLog({ ...editingLog, fat: parseFloat(e.target.value) })} />
-              </div>
-              <button type="submit" className="btn-primary">Save Changes</button>
-              <button type="button" className="btn-secondary" onClick={() => { setShowEditLogForm(false); setEditingLog(null); }}>Cancel</button>
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card modal" style={{ width: '95%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2>Profile Settings</h2>
+            <form onSubmit={handleUpdateProfile} className="grid" style={{ marginTop: '1.5rem' }}>
+                <input placeholder="Name" value={profileFormData.name} onChange={e => setProfileFormData({ ...profileFormData, name: e.target.value })} />
+                <button type="submit" className="btn-primary">Update Profile</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowProfileEdit(false)}>Close</button>
             </form>
           </div>
         </div>
