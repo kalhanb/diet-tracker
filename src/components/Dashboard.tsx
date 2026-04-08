@@ -750,7 +750,10 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                                         {renderMarkdown(plan.planText.substring(0, 300) + '...')}
                                     </div>
                                     <button 
-                                        onClick={() => setChatMessages([{ role: 'model', parts: [{ text: plan.planText }] }])}
+                                        onClick={() => setChatMessages([
+                                            { role: 'user', parts: [{ text: "Re-examining clinical plan from " + new Date(plan.date).toLocaleDateString() + ":" }] },
+                                            { role: 'model', parts: [{ text: plan.planText }] }
+                                        ])}
                                         style={{ marginTop: '1rem', width: '100%', padding: '0.4rem', borderRadius: '0.5rem', background: 'var(--surface-raised)', fontSize: '0.75rem' }}
                                     >
                                         Re-load Full Plan
