@@ -7,26 +7,44 @@ export async function GET() {
   const models: { provider: string; id: string; name: string }[] = [];
 
   try {
-    // 1. Fetch Gemini Models
+    // 1. Fetch Real-time Gemini Models
     if (process.env.GEMINI_API_KEY) {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      // In the current SDK, listing models is done via the 'listModels' method on the genAI instance
-      // Using a fallback list for common ones if the listModels call needs specific auth or version
-      const commonGemini = [
-        { provider: 'gemini', id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash (Fast)' },
-        { provider: 'gemini', id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro (Powerful)' },
-        { provider: 'gemini', id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' }
-      ];
-      models.push(...commonGemini);
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        const data = await response.json();
+        
+        if (data.models) {
+          const geminiModels = data.models
+            .filter((m: any) => m.supportedGenerationMethods.includes('generateContent'))
+            .map((m: any) => ({
+              provider: 'gemini',
+              id: m.name.replace('models/', ''),
+              name: m.displayName || m.name
+            }));
+          models.push(...geminiModels);
+        }
+      } catch (e) {
+        console.error('Gemini list fail:', e);
+      }
     }
 
-    // 2. Fetch OpenAI Models (Limited to common chat models for simplicity)
+    // 2. Fetch Real-time OpenAI Models
     if (process.env.OPENAI_API_KEY) {
-      models.push(
-        { provider: 'openai', id: 'gpt-4o', name: 'GPT-4o (Omni)' },
-        { provider: 'openai', id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-        { provider: 'openai', id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
-      );
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.models.list();
+        const openAiModels = response.data
+          .filter(m => m.id.startsWith('gpt-'))
+          .map(m => ({
+            provider: 'openai',
+            id: m.id,
+            name: m.id.toUpperCase()
+          }));
+        models.push(...openAiModels);
+      } catch (e) {
+        console.error('OpenAI list fail:', e);
+      }
     }
 
     // 3. Fetch Anthropic Models

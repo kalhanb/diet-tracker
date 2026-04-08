@@ -476,37 +476,50 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       )}
 
       {activeTab === 'diet-plans' && (
-        <div className="grid" style={{ gridTemplateColumns: isAiExpanded ? '1fr' : '1.3fr 0.7fr', gap: '2rem', alignItems: 'start' }}>
-          {/* Left Side: Interactive AI Coach */}
+        <div className={`ai-layout ${isAiExpanded ? 'expanded' : ''}`} style={{ display: 'grid', gridTemplateColumns: isAiExpanded ? '1fr' : '1fr 300px', gap: '2rem', height: '100%' }}>
           <motion.section 
+            id="ai-coach"
+            className="glass-card ai-coach-container"
             layout
-            className="glass-card" 
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              height: isAiExpanded ? '80vh' : '650px', 
-              background: 'rgba(30, 41, 59, 0.4)',
-              transition: '0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
+            style={{ display: 'flex', flexDirection: 'column', height: isAiExpanded ? '75vh' : '65vh', position: 'relative', background: 'rgba(30, 41, 59, 0.4)' }}
           >
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--primary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles size={20} color="white" />
-                    </div>
-                    <div>
-                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>AI Sports Dietitian</h2>
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Personalized Goal Coaching</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Elite Coach</h2>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.25rem 0.75rem', borderRadius: '2rem', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                        <select 
+                            value={activeConfig.activeProvider} 
+                            onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', outline: 'none' }}
+                        >
+                            <option value="gemini">Gemini</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Claude</option>
+                        </select>
+                        <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+                        {availableModels.length === 0 ? (
+                            <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Syncing...</span>
+                        ) : (
+                            <select 
+                                value={activeConfig.activeModel} 
+                                onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}
+                            >
+                                {availableModels
+                                    .filter(m => m.provider === activeConfig.activeProvider)
+                                    .map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                            </select>
+                        )}
                     </div>
                 </div>
-                <button 
-                  className="btn-secondary" 
-                  style={{ padding: '0.5rem' }} 
-                  onClick={() => setIsAiExpanded(!isAiExpanded)}
-                >
-                    {isAiExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-                </button>
-             </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn-secondary" style={{ padding: '0.5rem' }} onClick={() => setIsAiExpanded(!isAiExpanded)}>
+                        {isAiExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
+                </div>
+            </div>
 
              <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingRight: '0.5rem', marginBottom: '1.5rem' }}>
                 {chatMessages.length === 0 ? (
@@ -549,7 +562,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
              </div>
           </motion.section>
 
-          {/* Right Side: Quick History Library */}
           {!isAiExpanded && (
               <section className="grid" style={{ alignContent: 'start' }}>
                 <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Favorite Items</h2>
@@ -586,60 +598,6 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                       <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
                           <ShoppingBag size={48} style={{ margin: '0 auto 1.5rem' }} />
                           <p>Your pantry is currently empty. Add items to see AI suggestions.</p>
-                      </div>
-                  )}
-              </div>
-          </section>
-      )}
-
-      {activeTab === 'admin' && (
-          <section className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                  <ShieldCheck size={32} color="var(--primary)" />
-                  <h2>AI Orchestrator Settings 🛡️</h2>
-              </div>
-              
-              <div className="grid" style={{ gap: '2rem' }}>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>AI Engine Provider</label>
-                      <select 
-                        value={activeConfig.activeProvider} 
-                        onChange={(e) => updateGlobalConfig(e.target.value, activeConfig.activeModel)}
-                        style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
-                      >
-                          <option value="gemini">Google Gemini (Default)</option>
-                          <option value="openai">OpenAI (ChatGPT-4o)</option>
-                          <option value="anthropic">Anthropic (Claude 3.5)</option>
-                      </select>
-                  </div>
-
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Active Model</label>
-                      <select 
-                        value={activeConfig.activeModel} 
-                        onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
-                        style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
-                      >
-                          {availableModels
-                            .filter(m => m.provider === activeConfig.activeProvider)
-                            .map(m => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
-                          ))}
-                          <optgroup label="Custom / Other">
-                              <option value="custom">Manual Entry...</option>
-                          </optgroup>
-                      </select>
-                  </div>
-
-                  {activeConfig.activeModel === 'custom' && (
-                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          <label style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Manual Model ID</label>
-                          <input 
-                            type="text" 
-                            onChange={(e) => updateGlobalConfig(activeConfig.activeProvider, e.target.value)}
-                            placeholder="e.g. gpt-4-turbo"
-                            style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem' }}
-                          />
                       </div>
                   )}
               </div>
