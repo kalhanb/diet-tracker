@@ -11,7 +11,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, age, gender, weight, height, activityLevel, goalType, targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions } = body;
+  const { 
+    email, name, age, gender, weight, height, activityLevel, goalType, 
+    targetWeight, ldlLevel, glucoseLevel, bloodPressure, medications, healthConditions 
+  } = body;
 
   const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
   const tdee = calculateTDEE(bmr, activityLevel);
@@ -19,6 +22,7 @@ export async function POST(request: Request) {
 
   const user = await prisma.user.create({
     data: {
+      email,
       name,
       age: parseInt(age),
       gender,
@@ -28,8 +32,8 @@ export async function POST(request: Request) {
       goalType,
       targetWeight: parseFloat(targetWeight),
       dailyCalories,
-      ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
-      glucoseLevel: glucoseLevel ? parseFloat(glucoseLevel) : null,
+      ldlLevel: ldlLevel?.toString() || null,
+      glucoseLevel: glucoseLevel?.toString() || null,
       bloodPressure: bloodPressure || null,
       medications: medications || null,
       healthConditions: healthConditions || null,
@@ -59,8 +63,8 @@ export async function PATCH(request: Request) {
             goalType,
             targetWeight: parseFloat(targetWeight),
             dailyCalories,
-            ldlLevel: ldlLevel ? parseFloat(ldlLevel) : null,
-            glucoseLevel: glucoseLevel ? parseFloat(glucoseLevel) : null,
+            ldlLevel: ldlLevel?.toString() || null,
+            glucoseLevel: glucoseLevel?.toString() || null,
             bloodPressure: bloodPressure || null,
             medications: medications || null,
             healthConditions: healthConditions || null,
