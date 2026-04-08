@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { mealLibrary } from '@/data/mealLibrary';
 import { Pricing } from './Pricing';
+import { MedicalDisclaimer } from './MedicalDisclaimer';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -81,7 +82,9 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const [availableModels, setAvailableModels] = useState<{provider: string, id: string, name: string}[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [showPricing, setShowPricing] = useState(false);
+  const [showSafety, setShowSafety] = useState(false);
   const [isElite, setIsElite] = useState(initialUser.subscriptionStatus === 'active');
+  const [safetyAccepted, setSafetyAccepted] = useState(false);
   
   // Interactive Chat State
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', parts: {text: string}[]}[]>([]);
@@ -174,6 +177,10 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   const handleTabChange = (tabId: string) => {
     if ((tabId === 'diet-plans' || tabId === 'pantry') && !isElite) {
       setShowPricing(true);
+      return;
+    }
+    if ((tabId === 'diet-plans' || tabId === 'pantry') && !safetyAccepted) {
+      setShowSafety(true);
       return;
     }
     setActiveTab(tabId);
@@ -291,13 +298,15 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
         await fetch('/api/logs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...meal, foodName: meal.name, userId: user.id }),
+            body: JSON.stringify({ ...meal, name: meal.name, userId: user.id }),
         });
     }
     setLoggingStatus('Goal updated! 🥗');
     fetchLogs();
     setTimeout(() => setLoggingStatus(null), 3000);
   };
+
+  const currentSafetyAccepted = safetyAccepted; // For closure safety
 
   const updateGlobalConfig = async (provider: string, model: string) => {
     try {
@@ -504,9 +513,14 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                     ))}
                 </div>
 
-                <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <input placeholder="Ask coach..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
-                    <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading}><Send size={18} /></button>
+                <div className="chat-input" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input placeholder="Ask coach..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendChatMessage()} />
+                        <button className="btn-primary" onClick={() => sendChatMessage()} disabled={isAiLoading}><Send size={18} /></button>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.5, textAlign: 'center', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                        <ShieldAlert size={12} /> Nutrition suggestions are AI-generated & NOT medical advice. Consult a doctor.
+                    </div>
                 </div>
               </section>
             </motion.div>
@@ -532,6 +546,10 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       </main>
 
       {/* Pricing Modal */}
+      {showSafety && (
+          <MedicalDisclaimer onAccept={() => { setSafetyAccepted(true); setShowSafety(false); setActiveTab(activeTab === 'dashboard' ? 'diet-plans' : activeTab); }} />
+      )}
+
       {showPricing && (
           <Pricing onUpgrade={handleUpgrade} onClose={() => setShowPricing(false)} />
       )}
