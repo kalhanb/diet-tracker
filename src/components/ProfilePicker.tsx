@@ -21,6 +21,7 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    email: '',
     name: '',
     age: '',
     gender: 'male',
@@ -96,6 +97,9 @@ export default function ProfilePicker({ onSelect }: { onSelect: (user: User) => 
         <div className="glass-card" style={{ maxWidth: '700px', width: '95%' }}>
           <h2 style={{ marginBottom: '2rem' }}>Elite Profile Setup</h2>
           <form onSubmit={handleSubmit} className="grid">
+            <div className="grid grid-cols-1" style={{ marginBottom: '1rem' }}>
+                <input placeholder="Personal Email (Required for Elite Access)" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+            </div>
             <div className="grid grid-cols-2">
                 <input placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
                 <input placeholder="Age" type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} required />
