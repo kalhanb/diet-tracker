@@ -400,6 +400,9 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
   };
 
   const caloriesConsumed = logs.reduce((sum, log) => sum + log.calories, 0);
+  const proteinConsumed = logs.reduce((sum, log) => sum + log.protein, 0);
+  const carbsConsumed = logs.reduce((sum, log) => sum + log.carbs, 0);
+  const fatConsumed = logs.reduce((sum, log) => sum + log.fat, 0);
   const caloriesRemaining = user.dailyCalories - caloriesConsumed;
   const progressPercent = Math.min((caloriesConsumed / user.dailyCalories) * 100, 100);
 
@@ -490,12 +493,31 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                             <h3>Fuel Status</h3>
                             <span className="value" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{caloriesConsumed} / {user.dailyCalories}</span>
                         </div>
-                        <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1rem' }}>
+                        <div className="progress-bar-container" style={{ background: 'var(--surface-raised)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '1.5rem' }}>
                             <div className="progress-bar" style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary)' }}></div>
                         </div>
-                        <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setEditingLog(null); setShowLogForm(true); }}>
-                            <Plus size={18} /> Log Fuel
-                        </button>
+                        <div className="macros-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '0.75rem' }}>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>PRO</div>
+                                <div style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{proteinConsumed}g</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '0.75rem' }}>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>CARB</div>
+                                <div style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{carbsConsumed}g</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '0.75rem' }}>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>FAT</div>
+                                <div style={{ fontWeight: 'bold' }}>{fatConsumed}g</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                           <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setEditingLog(null); setShowLogForm(true); }}>
+                             <Plus size={18} /> Log Fuel
+                           </button>
+                           <button className="btn-secondary" title="Log Weight" onClick={() => setShowWeightForm(true)}>
+                             <Scale size={18} />
+                           </button>
+                        </div>
                     </div>
 
                     <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -719,11 +741,49 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
       {showProfileEdit && (
         <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="glass-card modal" style={{ width: '95%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2>Profile Settings</h2>
-            <form onSubmit={handleUpdateProfile} className="grid" style={{ marginTop: '1.5rem' }}>
-                <input placeholder="Name" value={profileFormData.name} onChange={e => setProfileFormData({ ...profileFormData, name: e.target.value })} />
-                <button type="submit" className="btn-primary">Update Profile</button>
-                <button type="button" className="btn-secondary" onClick={() => setShowProfileEdit(false)}>Close</button>
+            <form onSubmit={handleUpdateProfile} className="grid grid-cols-2" style={{ marginTop: '1.5rem', gap: '1rem' }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Full Name</label>
+                    <input placeholder="Name" value={profileFormData.name} onChange={e => setProfileFormData({ ...profileFormData, name: e.target.value })} />
+                </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Age</label>
+                    <input type="number" value={profileFormData.age} onChange={e => setProfileFormData({ ...profileFormData, age: parseInt(e.target.value) })} />
+                </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Weight (kg)</label>
+                    <input type="number" step="0.1" value={profileFormData.weight} onChange={e => setProfileFormData({ ...profileFormData, weight: parseFloat(e.target.value) })} />
+                </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Height (cm)</label>
+                    <input type="number" value={profileFormData.height} onChange={e => setProfileFormData({ ...profileFormData, height: parseFloat(e.target.value) })} />
+                </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Activity Level</label>
+                    <select value={profileFormData.activityLevel} onChange={e => setProfileFormData({ ...profileFormData, activityLevel: e.target.value })}>
+                        <option value="sedentary">Sedentary</option>
+                        <option value="light">Lightly Active</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="very">Very Active</option>
+                    </select>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}> <hr style={{ opacity: 0.1, margin: '1rem 0' }} /> <h4 style={{ color: 'var(--primary)' }}>Clinical Bio-Markers</h4> </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>LDL Level</label>
+                    <input value={profileFormData.ldlLevel} onChange={e => setProfileFormData({ ...profileFormData, ldlLevel: e.target.value })} />
+                </div>
+                <div>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Glucose Level (mg/dL)</label>
+                    <input value={profileFormData.glucoseLevel} onChange={e => setProfileFormData({ ...profileFormData, glucoseLevel: e.target.value })} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Medications / Conditions</label>
+                    <input value={profileFormData.medications} onChange={e => setProfileFormData({ ...profileFormData, medications: e.target.value })} />
+                </div>
+                <div style={{ gridColumn: 'span 2', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <button type="submit" className="btn-primary" style={{ flex: 1 }}>Update Profile</button>
+                    <button type="button" className="btn-secondary" onClick={() => setShowProfileEdit(false)}>Cancel</button>
+                </div>
             </form>
           </div>
         </div>
@@ -737,6 +797,19 @@ export default function Dashboard({ user: initialUser, onBack }: { user: User, o
                 <input placeholder="Item name" value={pantryItemName} onChange={e => setPantryItemName(e.target.value)} required />
                 <button type="submit" className="btn-primary">Add Item</button>
                 <button type="button" className="btn-secondary" onClick={() => setShowPantryForm(false)}>Cancel</button>
+                </form>
+            </div>
+          </div>
+      )}
+
+      {showWeightForm && (
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="glass-card modal" style={{ width: '90%', maxWidth: '400px' }}>
+                <h2>Update Weight</h2>
+                <form onSubmit={handleAddWeight} className="grid" style={{ marginTop: '1rem' }}>
+                  <input placeholder="Current Weight (kg)" type="number" step="0.1" value={weightFormData.weight} onChange={e => setWeightFormData({...weightFormData, weight: parseFloat(e.target.value)})} required />
+                  <button type="submit" className="btn-primary">Save Weight</button>
+                  <button type="button" className="btn-secondary" onClick={() => setShowWeightForm(false)}>Cancel</button>
                 </form>
             </div>
           </div>
