@@ -51,6 +51,20 @@ h1, h2, h3 {
 a {
   color: inherit;
   text-decoration: none;
+  scrollbar-width: none;
+}
+
+/* Pricing Grid */
+.pricing-grid {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .pricing-grid {
+    flex-direction: column !important;
+  }
 }
 
 button {
